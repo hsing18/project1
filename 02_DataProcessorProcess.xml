@@ -1,0 +1,945 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<NikuDataBus xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../xsd/nikuxog_contentPack.xsd">
+	<Header action="write" externalSource="NIKU" objectType="contentPack" version="15.0"/>
+	<contentPack update="true">
+		<Processes>
+			<Process allowOneRunningInstance="true" code="rego_data_processor" createdBy="admin" endStep="Finish" source="customer" startOption="ON_DEMAND" startStep="Start">
+				<nls languageCode="ca" name="Data Processor"/>
+				<nls languageCode="cs" name="Data Processor"/>
+				<nls languageCode="da" name="Data Processor"/>
+				<nls languageCode="de" name="Data Processor"/>
+				<nls languageCode="en" name="Data Processor"/>
+				<nls languageCode="es" name="Data Processor"/>
+				<nls languageCode="fi" name="Data Processor"/>
+				<nls languageCode="fr" name="Data Processor"/>
+				<nls languageCode="hu" name="Data Processor"/>
+				<nls languageCode="it" name="Data Processor"/>
+				<nls languageCode="ja" name="Data Processor"/>
+				<nls languageCode="ko" name="Data Processor"/>
+				<nls languageCode="nl" name="Data Processor"/>
+				<nls languageCode="no" name="Data Processor"/>
+				<nls languageCode="pl" name="Data Processor"/>
+				<nls languageCode="pt" name="Data Processor"/>
+				<nls languageCode="ru" name="Data Processor"/>
+				<nls languageCode="sv" name="Data Processor"/>
+				<nls languageCode="tr" name="Data Processor"/>
+				<nls languageCode="zh" name="Data Processor"/>
+				<nls languageCode="zh_TW" name="Data Processor"/>
+				<Objects>
+					<Object manualStart="false" name="thisXmlDocument" objectType="xml_document" partitionCode="NIKU.ROOT" partitionModeCode="PARTITION_ONLY" type="BPM_POT_PRIMARY"/>
+				</Objects>
+				<Steps>
+					<Step id="Start" isMileStone="false" sequenceNo="1">
+						<nls languageCode="ca" name="Start"/>
+						<nls languageCode="cs" name="Start"/>
+						<nls languageCode="da" name="Start"/>
+						<nls languageCode="de" name="Start"/>
+						<nls languageCode="en" name="Start"/>
+						<nls languageCode="es" name="Start"/>
+						<nls languageCode="fi" name="Start"/>
+						<nls languageCode="fr" name="Start"/>
+						<nls languageCode="hu" name="Start"/>
+						<nls languageCode="it" name="Start"/>
+						<nls languageCode="ja" name="Start"/>
+						<nls languageCode="ko" name="Start"/>
+						<nls languageCode="nl" name="Start"/>
+						<nls languageCode="no" name="Start"/>
+						<nls languageCode="pl" name="Start"/>
+						<nls languageCode="pt" name="Start"/>
+						<nls languageCode="ru" name="Start"/>
+						<nls languageCode="sv" name="Start"/>
+						<nls languageCode="tr" name="Start"/>
+						<nls languageCode="zh" name="Start"/>
+						<nls languageCode="zh_TW" name="Start"/>
+						<Notifications notifyOwner="false">
+							<NotifyWhen stepCompleted="false" stepInError="false" stepStarted="false"/>
+							<Assignees/>
+						</Notifications>
+						<Operations>
+							<Action code="script" synchronized="true" type="BPM_SAT_CUSTOM">
+								<nls languageCode="ca" name="Script"/>
+								<nls languageCode="cs" name="Script"/>
+								<nls languageCode="da" name="Script"/>
+								<nls languageCode="de" name="Script"/>
+								<nls languageCode="en" name="Script"/>
+								<nls languageCode="es" name="Script"/>
+								<nls languageCode="fi" name="Script"/>
+								<nls languageCode="fr" name="Script"/>
+								<nls languageCode="hu" name="Script"/>
+								<nls languageCode="it" name="Script"/>
+								<nls languageCode="ja" name="Script"/>
+								<nls languageCode="ko" name="Script"/>
+								<nls languageCode="nl" name="Script"/>
+								<nls languageCode="no" name="Script"/>
+								<nls languageCode="pl" name="Script"/>
+								<nls languageCode="pt" name="Script"/>
+								<nls languageCode="ru" name="Script"/>
+								<nls languageCode="sv" name="Script"/>
+								<nls languageCode="tr" name="Script"/>
+								<nls languageCode="zh" name="Script"/>
+								<nls languageCode="zh_TW" name="Script"/>
+								<customScript languageCode="gel">
+									<scriptText>
+										<gel:script xmlns:core="jelly:core" xmlns:gel="jelly:com.niku.union.gel.GELTagLibrary" xmlns:sql="jelly:sql" xmlns:util="jelly:util" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+											<!-- PROCESS PARAMETERS -->
+											<gel:parameter default="RegoTools.jar" var="dataProcessorJarFilePath"/>
+											<gel:parameter default="rego-pgp-0.1.3.jar" var="dataProcessorPgpJarFilePath"/>
+											<gel:parameter default="jsch-0.1.55.jar" var="dataProcessorJschJarFilePath"/>
+											<gel:parameter default="/Root/DMS/KS" var="dataProcessorKsFolderPath"/>
+											<!-- THE PATH WHERE THE FILES ARE STORED IN THE KNOWLEDGE STORE -->
+											<gel:parameter default="Data Processor" var="dataProcessorKsFolderName"/>
+											<!-- THE FOLDER WHERE THE FILES ARE STORED IN THE KNOWLEDGE STORE -->
+											<gel:parameter default="false" var="printRegoToolKitLoad"/>
+											<!-- PROCESS VARIABLES -->
+											<core:set value="com.rego.dataProc.DataProcessor" var="dataProcessorClassName"/>
+											<core:set value="com.regoconsulting.crypto.PGPUtility" var="pgpClassName"/>
+											<core:set value="com.jcraft.jsch.JSch" var="jschClassName"/>
+											<core:set value="java.net.URLClassLoader" var="urlCL"/>
+											<core:set value="-1" var="dataProcessorFolderID"/>
+											<core:set value="0" var="fileExistsCount"/>
+											<core:set value="false" var="isError"/>
+											<!-- GET START TIME OF PROCESS AND ESTABLISH FOR EACH LOOP FOR EXCEPTION HANDLING -->
+											<core:invokeStatic className="java.lang.System" method="currentTimeMillis" var="processStartTime"/>
+											<core:forEach begin="0" end="0" step="1" var="i">
+												<!--*********************************************************************************************************-->
+												<!-- GET A DATABASE CONNECTION -->
+												<!--*********************************************************************************************************-->
+												<!-- GET CLARITY DATABASE CONNECTION -->
+												<core:catch var="dbConnCatch">
+													<gel:setDataSource dbId="niku" var="clarityDB"/>
+													<core:set value="${context.getConnection().getAutoCommit()}" var="previousAutoCommit"/>
+													<core:expr value="${context.getConnection().setAutoCommit(true)}"/>
+												</core:catch>
+												<core:if test="${!empty(dbConnCatch)}">
+													<gel:log level="ERROR">DB Connection Error: ${dbConnCatch}</gel:log>
+													<core:set value="true" var="isError"/>
+													<core:break/>
+												</core:if>
+												<!--*********************************************************************************************************-->
+												<!-- LOAD THE REGO TOOL KIT -->
+												<!--*********************************************************************************************************-->
+												<core:catch var="classLoadCatch">
+													<gel:log level="INFO">[---------- LOAD REGO TOOL KIT ----------]</gel:log>
+													<!-- GET A CONFIGURATION MANAGER INSTANCE -->
+													<core:invokeStatic className="com.niku.union.config.ConfigurationManager" method="getInstance" var="configManager"/>
+													<core:set value="${configManager.getProperties().getDatabase(0).getVendor().toString()}" var="dbVendor"/>
+													<core:set value="${configManager.getProperties().getSearchServer().getStoreFilesInDatabase()}" var="docsInDB"/>
+													<core:if test="${printRegoToolKitLoad}">
+														<core:invokeStatic className="java.net.InetAddress" method="getLocalHost" var="host"/>
+														<gel:log level="INFO">Host: ${host.getLocalHost()}. DB Vendor: ${dbVendor}. Docs In DB: ${docsInDB}</gel:log>
+													</core:if>
+													<!-- DETERMINE IF CLASS IS ALREADY LOADED -->
+													<core:catch var="classLoadedCatch">
+														<core:invokeStatic className="java.lang.Class" method="forName" var="dpClass">
+															<core:arg type="java.lang.String" value="${dataProcessorClassName}"/>
+														</core:invokeStatic>
+														<core:new className="${dataProcessorClassName}" var="dataProcessor"/>
+														<gel:log level="INFO">Data Processor Already Loaded From: ${dpClass.getProtectionDomain().getCodeSource().getLocation().toString()}</gel:log>
+													</core:catch>
+													<!-- LOAD CLASS IF NEEDED -->
+													<core:choose>
+														<core:when test="${dpClass != null}">
+															<!-- INITIALIZE THE CLASS LOADED FROM THE CUSTOM LIB DIRECTORY -->
+															<core:invoke method="initialize" on="${dataProcessor}">
+																<core:arg type="com.niku.union.gel.GELContext" value="${context}"/>
+																<core:arg type="long" value="-99"/>
+															</core:invoke>
+														</core:when>
+														<core:otherwise>
+															<core:invokeStatic className="java.lang.System" method="currentTimeMillis" var="classLoadStartTime"/>
+															<!-- ENSURE THE DATA PROCESSOR JAR FILE PATH PARAMETER IS COMPLETED -->
+															<core:if test="${empty(dataProcessorJarFilePath)}">
+																<gel:log level="ERROR">A Data Processor Jar File Path is required.</gel:log>
+																<core:set value="true" var="isError"/>
+																<core:break/>
+															</core:if>
+															<!-- GET THE FILES FOR ALL THREE JARS -->
+															<core:new className="java.io.File" var="dataProcessorJarFile">
+																<core:arg type="java.lang.String" value="${dataProcessorJarFilePath}"/>
+															</core:new>
+															<core:new className="java.io.File" var="dataProcessorPgpJarFile">
+																<core:arg type="java.lang.String" value="${dataProcessorPgpJarFilePath}"/>
+															</core:new>
+															<core:new className="java.io.File" var="dataProcessorJschJarFile">
+																<core:arg type="java.lang.String" value="${dataProcessorJschJarFilePath}"/>
+															</core:new>
+															<!-- GET FILE VERSION IDs FOR THE REGO JDK, QUERY FILE, AND REGO PGP FILE -->
+															<sql:query dataSource="${clarityDB}" escapeText="0" var="ksFileQuery"><![CDATA[
+            SELECT COALESCE(FLD.ID, -1) DP_FOLDER_ID
+            , MAX(CASE WHEN F.NAME = ? THEN FV.ID END) DP_FILE_VERSION_ID
+            , MAX(CASE WHEN F.NAME = ? THEN FV.ID END) PGP_FILE_VERSION_ID
+            , MAX(CASE WHEN F.NAME = ? THEN FV.ID END) JSCH_FILE_VERSION_ID
+            FROM DUAL
+            LEFT JOIN CLB_DMS_FOLDERS FLD ON FLD.PATH_NAME = ? AND FLD.NAME = ? AND FLD.FOLDER_TYPE = 'StandardFolder' AND FLD.ASSOC_OBJ_TYPE = 'NAME'
+            LEFT JOIN CLB_DMS_FILES F ON FLD.ID = F.PARENT_FOLDER_ID AND F.NAME IN (?, ?, ?)
+            LEFT JOIN CLB_DMS_VERSIONS FV ON F.ID = FV.FILE_ID AND FV.IS_LATEST = 1
+            WHERE 1=1
+            GROUP BY FLD.ID
+            ]]><sql:param value="${dataProcessorJarFile.getName()}"/>
+																<sql:param value="${dataProcessorPgpJarFile.getName()}"/>
+																<sql:param value="${dataProcessorJschJarFile.getName()}"/>
+																<sql:param value="${dataProcessorKsFolderPath}"/>
+																<sql:param value="${dataProcessorKsFolderName}"/>
+																<sql:param value="${dataProcessorJarFile.getName()}"/>
+																<sql:param value="${dataProcessorPgpJarFile.getName()}"/>
+																<sql:param value="${dataProcessorJschJarFile.getName()}"/>
+															</sql:query>
+															<!-- SET THE FOLDER AND FILE VARIABLES -->
+															<core:set value="${ksFileQuery.rows[0].DP_FOLDER_ID}" var="dataProcessorFolderID"/>
+															<core:set value="${ksFileQuery.rows[0].DP_FILE_VERSION_ID}" var="dataProcessorJarFileVersionID"/>
+															<core:set value="${ksFileQuery.rows[0].PGP_FILE_VERSION_ID}" var="dataProcessorPgpJarFileVersionID"/>
+															<core:set value="${ksFileQuery.rows[0].JSCH_FILE_VERSION_ID}" var="dataProcessorJschJarFileVersionID"/>
+															<!--*********************************************************************************************************-->
+															<!-- LOCATE THE DATA PROCESSOR JAR FILE -->
+															<!--*********************************************************************************************************-->
+															<core:choose>
+																<!-- DATA PROCESSOR JAR FILE FOUND AT THE FILE PATH -->
+																<core:when test="${dataProcessorJarFile.exists() and !dataProcessorJarFile.isDirectory()}">
+																	<core:if test="${printRegoToolKitLoad}">
+																		<gel:log level="INFO">Data Processor Jar File found at file path: ${dataProcessorJarFile.getCanonicalFile()}.</gel:log>
+																	</core:if>
+																</core:when>
+																<!-- DATA PROCESSOR PATH EXISTS BUT ITS A DIRECTORY -->
+																<core:when test="${dataProcessorJarFile.exists() and dataProcessorJarFile.isDirectory()}">
+																	<gel:log level="ERROR">The Data Processor Jar File Path must be a file, not a directory: ${dataProcessorJarFile.getCanonicalFile()}</gel:log>
+																	<core:set value="true" var="isError"/>
+																	<core:break/>
+																</core:when>
+																<!-- DATA PROCESSOR PATH DOES NOT EXIST -->
+																<core:when test="${!dataProcessorJarFile.exists() and !empty(dataProcessorJarFile.getParentFile())}">
+																	<gel:log level="ERROR">The Data Processor Jar File does not exist at the path: ${dataProcessorJarFile.getCanonicalFile()}</gel:log>
+																	<core:set value="true" var="isError"/>
+																	<core:break/>
+																</core:when>
+																<!-- USE DATA PROCESSOR JAR FILE FROM KNOWLEDGE STORE -->
+																<core:when test="${!dataProcessorJarFile.exists() and empty(dataProcessorJarFile.getParentFile()) and !docsInDB}">
+																	<core:if test="${empty(dataProcessorJarFileVersionID)}">
+																		<gel:log level="ERROR">The Data Processor Jar File Version ID was not found in the Knowledge Store. File Name: ${dataProcessorJarFile.getName()}. Folder Path: ${dataProcessorKsFolderPath}. Folder Name: ${dataProcessorKsFolderName}. File Version ID: ${dataProcessorJarFileVersionID}</gel:log>
+																		<core:set value="true" var="isError"/>
+																		<core:break/>
+																	</core:if>
+																	<!-- GET THE DATA PROCESSOR JAR FROM THE FILE STORE -->
+																	<core:invokeStatic className="com.niku.dms.util.FileUtil" method="getCompleteFilePath" var="dataProcessorJarFileString">
+																		<core:arg type="long" value="${dataProcessorJarFileVersionID.longValue()}"/>
+																	</core:invokeStatic>
+																	<core:new className="java.io.File" var="dataProcessorJarFile">
+																		<core:arg type="java.lang.String" value="${dataProcessorJarFileString}"/>
+																	</core:new>
+																	<core:if test="${!dataProcessorJarFile.exists()}">
+																		<gel:log level="ERROR">The Data Processor Jar File was not found in the file store at : ${dataProcessorJarFileString}.</gel:log>
+																		<core:set value="true" var="isError"/>
+																		<core:break/>
+																	</core:if>
+																	<core:if test="${printRegoToolKitLoad}">
+																		<gel:log level="INFO">Data Processor Jar File was found in the file store at: ${dataProcessorJarFileString}.</gel:log>
+																	</core:if>
+																</core:when>
+																<!-- DATA PROCESSOR FILE DOES NOT EXIST, DOES NOT PROVIDE A FULL PATH, AND FILES ARE STORED IN THE DATABASE -->
+																<core:when test="${!dataProcessorJarFile.exists() and empty(dataProcessorJarFile.getParentFile()) and docsInDB}">
+																	<gel:log level="ERROR">The Data Processor Jar File Path must exist at the file path when documents are stored in the database: ${dataProcessorJarFile.getCanonicalFile()}</gel:log>
+																	<core:set value="true" var="isError"/>
+																	<core:break/>
+																</core:when>
+																<core:otherwise>
+																	<gel:log level="ERROR">Unable to locate the Data Processor Jar File.</gel:log>
+																	<core:set value="true" var="isError"/>
+																	<core:break/>
+																</core:otherwise>
+															</core:choose>
+															<!-- END OF DATA PROCESSOR JAR FILE LOCATION -->
+															<!--*********************************************************************************************************-->
+															<!-- LOCATE THE PGP JAR FILE -->
+															<!--*********************************************************************************************************-->
+															<core:choose>
+																<!-- PGP JAR FILE FOUND AT THE FILE PATH -->
+																<core:when test="${dataProcessorPgpJarFile.exists() and !dataProcessorPgpJarFile.isDirectory()}">
+																	<core:if test="${printRegoToolKitLoad}">
+																		<gel:log level="INFO">PGP Jar File found at file path: ${dataProcessorPgpJarFile.getCanonicalFile()}.</gel:log>
+																	</core:if>
+																</core:when>
+																<!-- PGP JAR PATH EXISTS BUT ITS A DIRECTORY -->
+																<core:when test="${dataProcessorPgpJarFile.exists() and dataProcessorPgpJarFile.isDirectory()}">
+																	<gel:log level="ERROR">The PGP Jar File Path must be a file, not a directory: ${dataProcessorPgpJarFile.getCanonicalFile()}</gel:log>
+																	<core:set value="true" var="isError"/>
+																	<core:break/>
+																</core:when>
+																<!-- PGP JAR PATH DOES NOT EXIST -->
+																<core:when test="${!dataProcessorPgpJarFile.exists() and !empty(dataProcessorPgpJarFile.getParentFile())}">
+																	<gel:log level="ERROR">The PGP Jar File does not exist at the path: ${dataProcessorPgpJarFile.getCanonicalFile()}</gel:log>
+																	<core:set value="true" var="isError"/>
+																	<core:break/>
+																</core:when>
+																<!-- USE PGP JAR FILE FROM KNOWLEDGE STORE -->
+																<core:when test="${!dataProcessorPgpJarFile.exists() and empty(dataProcessorPgpJarFile.getParentFile()) and !docsInDB and !empty(dataProcessorPgpJarFileVersionID)}">
+																	<core:if test="${empty(dataProcessorPgpJarFileVersionID)}">
+																		<gel:log level="ERROR">The PGP Jar File Version ID was not found in the Knowledge Store. File Name: ${dataProcessorPgpJarFile.getName()}. Folder Path: ${dataProcessorKsFolderPath}. Folder Name: ${dataProcessorKsFolderName}. File Version ID: ${dataProcessorPgpJarFileVersionID}</gel:log>
+																		<core:set value="true" var="isError"/>
+																		<core:break/>
+																	</core:if>
+																	<!-- GET THE PGP JAR FILE FROM THE FILE STORE -->
+																	<core:invokeStatic className="com.niku.dms.util.FileUtil" method="getCompleteFilePath" var="dataProcessorPgpJarFileString">
+																		<core:arg type="long" value="${dataProcessorPgpJarFileVersionID.longValue()}"/>
+																	</core:invokeStatic>
+																	<core:new className="java.io.File" var="dataProcessorPgpJarFile">
+																		<core:arg type="java.lang.String" value="${dataProcessorPgpJarFileString}"/>
+																	</core:new>
+																	<core:if test="${!dataProcessorPgpJarFile.exists()}">
+																		<gel:log level="ERROR">The PGP Jar File was not found in the file store at : ${dataProcessorPgpJarFileString}.</gel:log>
+																		<core:set value="true" var="isError"/>
+																		<core:break/>
+																	</core:if>
+																	<core:if test="${printRegoToolKitLoad}">
+																		<gel:log level="INFO">PGP Jar File was found in the file store at: ${dataProcessorPgpJarFileString}.</gel:log>
+																	</core:if>
+																</core:when>
+																<!-- PGP JAR FILE DOES NOT EXIST, DOES NOT PROVIDE A FULL PATH, AND FILES ARE STORED IN THE DATABASE -->
+																<core:when test="${!dataProcessorPgpJarFile.exists() and empty(dataProcessorPgpJarFile.getParentFile()) and docsInDB and !empty(dataProcessorPgpJarFileVersionID)}">
+																	<gel:log level="ERROR">The PGP Jar File Path must exist at the file path when documents are stored in the database: ${dataProcessorPgpJarFile.getCanonicalFile()}</gel:log>
+																	<core:set value="true" var="isError"/>
+																	<core:break/>
+																</core:when>
+																<core:when test="${printRegoToolKitLoad}">
+																	<gel:log level="INFO">The PGP Jar File was not loaded.</gel:log>
+																</core:when>
+															</core:choose>
+															<!-- END OF PGP JAR FILE LOCATION -->
+															<!--*********************************************************************************************************-->
+															<!-- LOCATE THE JSCH JAR FILE -->
+															<!--*********************************************************************************************************-->
+															<core:choose>
+																<!-- JSCH JAR FILE FOUND AT THE FILE PATH -->
+																<core:when test="${dataProcessorJschJarFile.exists() and !dataProcessorJschJarFile.isDirectory()}">
+																	<core:if test="${printRegoToolKitLoad}">
+																		<gel:log level="INFO">JSch Jar File found at file path: ${dataProcessorJschJarFile.getCanonicalFile()}.</gel:log>
+																	</core:if>
+																</core:when>
+																<!-- JSCH JAR PATH EXISTS BUT ITS A DIRECTORY -->
+																<core:when test="${dataProcessorJschJarFile.exists() and dataProcessorJschJarFile.isDirectory()}">
+																	<gel:log level="ERROR">The JSch Jar File Path must be a file, not a directory: ${dataProcessorJschJarFile.getCanonicalFile()}</gel:log>
+																	<core:set value="true" var="isError"/>
+																	<core:break/>
+																</core:when>
+																<!-- JSCH JAR PATH DOES NOT EXIST -->
+																<core:when test="${!dataProcessorJschJarFile.exists() and !empty(dataProcessorJschJarFile.getParentFile())}">
+																	<gel:log level="ERROR">The JSch Jar File does not exist at the path: ${dataProcessorJschJarFile.getCanonicalFile()}</gel:log>
+																	<core:set value="true" var="isError"/>
+																	<core:break/>
+																</core:when>
+																<!-- USE JSCH JAR FILE FROM KNOWLEDGE STORE -->
+																<core:when test="${!dataProcessorJschJarFile.exists() and empty(dataProcessorJschJarFile.getParentFile()) and !docsInDB and !empty(dataProcessorJschJarFileVersionID)}">
+																	<core:if test="${empty(dataProcessorJschJarFileVersionID)}">
+																		<gel:log level="ERROR">The JSch Jar File Version ID was not found in the Knowledge Store. File Name: ${dataProcessorJschJarFile.getName()}. Folder Path: ${dataProcessorKsFolderPath}. Folder Name: ${dataProcessorKsFolderName}. File Version ID: ${dataProcessorJschJarFileVersionID}</gel:log>
+																		<core:set value="true" var="isError"/>
+																		<core:break/>
+																	</core:if>
+																	<!-- GET THE JSCH JAR FILE FROM THE FILE STORE -->
+																	<core:invokeStatic className="com.niku.dms.util.FileUtil" method="getCompleteFilePath" var="dataProcessorJschJarFileString">
+																		<core:arg type="long" value="${dataProcessorJschJarFileVersionID.longValue()}"/>
+																	</core:invokeStatic>
+																	<core:new className="java.io.File" var="dataProcessorJschJarFile">
+																		<core:arg type="java.lang.String" value="${dataProcessorJschJarFileString}"/>
+																	</core:new>
+																	<core:if test="${!dataProcessorJschJarFile.exists()}">
+																		<gel:log level="ERROR">The JSch Jar File was not found in the file store at : ${dataProcessorJschJarFileString}.</gel:log>
+																		<core:set value="true" var="isError"/>
+																		<core:break/>
+																	</core:if>
+																	<core:if test="${printRegoToolKitLoad}">
+																		<gel:log level="INFO">JSch Jar File was found in the file store at: ${dataProcessorJschJarFileString}.</gel:log>
+																	</core:if>
+																</core:when>
+																<!-- JSCH JAR FILE DOES NOT EXIST, DOES NOT PROVIDE A FULL PATH, AND FILES ARE STORED IN THE DATABASE -->
+																<core:when test="${!dataProcessorJschJarFile.exists() and empty(dataProcessorJschJarFile.getParentFile()) and docsInDB and !empty(dataProcessorJschJarFileVersionID)}">
+																	<gel:log level="ERROR">The JSch Jar File Path must exist at the file path when documents are stored in the database: ${dataProcessorJschJarFile.getCanonicalFile()}</gel:log>
+																	<core:set value="true" var="isError"/>
+																	<core:break/>
+																</core:when>
+																<core:when test="${printRegoToolKitLoad}">
+																	<gel:log level="INFO">The JSch Jar File was not loaded.</gel:log>
+																</core:when>
+															</core:choose>
+															<!-- END OF JSch JAR FILE LOCATION -->
+															<!--*********************************************************************************************************-->
+															<!-- SIDE LOAD THE DATA PROCESSOR JAR FILE -->
+															<!--*********************************************************************************************************-->
+															<core:new className="java.util.ArrayList" var="classList"/>
+															<core:invoke method="add" on="${classList}">
+																<core:arg type="java.net.URL" value="${dataProcessorJarFile.toURI().toURL()}"/>
+															</core:invoke>
+															<core:invokeStatic className="java.lang.Class" method="forName" var="classType">
+																<core:arg type="java.lang.String" value="java.net.URL"/>
+															</core:invokeStatic>
+															<core:invokeStatic className="java.lang.reflect.Array" method="newInstance" var="classArray">
+																<core:arg type="java.lang.Class" value="${classType}"/>
+																<core:arg type="int" value="${1}"/>
+															</core:invokeStatic>
+															<core:invoke method="toArray" on="${classList}" var="urlsArray">
+																<core:arg value="${classArray}"/>
+															</core:invoke>
+															<core:new className="${urlCL}" var="classLoader">
+																<core:arg value="${urlsArray}"/>
+																<core:arg value="${context.getClassLoader()}"/>
+															</core:new>
+															<core:invokeStatic className="java.lang.Class" method="forName" var="dataProcessorClass">
+																<core:arg type="java.lang.String" value="${dataProcessorClassName}"/>
+																<core:arg type="boolean" value="${true}"/>
+																<core:arg type="java.lang.ClassLoader" value="${classLoader}"/>
+															</core:invokeStatic>
+															<core:if test="${printRegoToolKitLoad}">
+																<gel:log level="INFO">Data Processor Class Loaded.</gel:log>
+															</core:if>
+															<!-- INSTANTIATE AND INITIALIZE THE CLASS -->
+															<core:invoke method="newInstance" on="${dataProcessorClass}" var="dataProcessor"/>
+															<core:if test="${dataProcessor == null}">
+																<gel:log level="ERROR">Data Processor instance is null.</gel:log>
+																<core:break/>
+															</core:if>
+															<core:invoke method="initialize" on="${dataProcessor}">
+																<core:arg type="com.niku.union.gel.GELContext" value="${context}"/>
+																<core:arg type="java.io.File" value="${dataProcessorPgpJarFile}"/>
+																<core:arg type="java.io.File" value="${dataProcessorJschJarFile}"/>
+																<core:arg type="long" value="${dataProcessorFolderID.longValue()}"/>
+															</core:invoke>
+															<!-- LOG CLASS LOADER RESULTS -->
+															<core:invokeStatic className="java.lang.System" method="currentTimeMillis" var="classLoadFinishTime"/>
+															<gel:log level="INFO">Data Processor Loaded. Version: ${dataProcessor.getVersion()}. Elapsed Time: ${classLoadFinishTime - classLoadStartTime}(ms).</gel:log>
+															<core:expr value="${context.getConnection().commit()}"/>
+														</core:otherwise>
+													</core:choose>
+													<!-- END OF CLASS LOAD CONDITION -->
+												</core:catch>
+												<!-- END OF CLASS LOAD CATCH -->
+												<!-- BREAK PROCESS IF THERE WAS AN ERROR -->
+												<core:if test="${!empty(classLoadCatch)}">
+													<gel:log level="ERROR">Class Load Error: ${classLoadCatch}</gel:log>
+													<core:expr value="${context.getConnection().commit()}"/>
+													<core:if test="${!empty(dataProcessor)}">
+														<core:invoke method="exceptionToString" on="${dataProcessor}" var="stackTrace">
+															<core:arg value="${classLoadCatch}"/>
+														</core:invoke>
+														<gel:log level="ERROR">${stackTrace}</gel:log>
+														<core:expr value="${context.getConnection().commit()}"/>
+													</core:if>
+													<core:break/>
+												</core:if>
+												<!--*********************************************************************************************************-->
+												<!-- INVOKE DATA PROCESSOR -->
+												<!--*********************************************************************************************************-->
+												<!-- CAPTURE THE XML DOCUMENT IF THE PROCESS WAS INVOKED THROUGH XOG -->
+												<core:set value="${null}" var="xmlDoc"/>
+												<core:catch var="xmlDocCatch">
+													<gel:getDocument var="xmlDoc"/>
+												</core:catch>
+												<!-- ENSURE THE DATA PROCESSOR INSTANCE IS NOT NULL -->
+												<core:if test="${dataProcessor == null}">
+													<gel:log level="ERROR">The Data Processor instance is null</gel:log>
+													<core:break/>
+												</core:if>
+												<!-- EXECUTE THE PROCESSES -->
+												<core:catch var="executeCatch">
+													<core:invoke method="executeProcesses" on="${dataProcessor}">
+														<core:arg type="org.w3c.dom.Document" value="${xmlDoc}"/>
+													</core:invoke>
+												</core:catch>
+												<!-- DATA LOAD ERRORS -->
+												<core:if test="${!empty(executeCatch)}">
+													<gel:log level="ERROR">Execution Error: ${executeCatch}</gel:log>
+													<core:invoke method="exceptionToString" on="${dataProcessor}" var="stackTrace">
+														<core:arg value="${executeCatch}"/>
+													</core:invoke>
+													<gel:log level="ERROR">Stack Trace: ${stackTrace}</gel:log>
+													<core:expr value="${context.getConnection().commit()}"/>
+													<core:set value="true" var="isError"/>
+												</core:if>
+												<!--*********************************************************************************************************-->
+												<!-- FINAL PROCESS RESULTS -->
+												<!--*********************************************************************************************************-->
+											</core:forEach>
+											<!-- END OF EXCEPTION FOR LOOP -->
+											<core:expr value="${context.getConnection().setAutoCommit(previousAutoCommit)}"/>
+											<gel:log level="INFO">[---------- DATA PROCESSOR COMPLETE ----------]</gel:log>
+											<!-- CLOSE DATA PROCESSOR CONNECTIONS -->
+											<core:if test="${dataProcessor != null}">
+												<core:invoke method="close" on="${dataProcessor}"/>
+											</core:if>
+											<!-- GET ELAPSED RUN TIME OF THE PROCESS -->
+											<core:invokeStatic className="java.lang.System" method="currentTimeMillis" var="processFinishTime"/>
+											<gel:log level="INFO">Server Processing. Total Elapsed Time: ${processFinishTime - processStartTime}(ms).</gel:log>
+										</gel:script>
+									</scriptText>
+									<scriptParameter isSecure="false" name="dataProcessorJarFilePath"/>
+									<scriptParameter isSecure="false" name="dataProcessorPgpJarFilePath"/>
+									<scriptParameter isSecure="false" name="dataProcessorJschJarFilePath"/>
+									<scriptParameter isSecure="false" name="dataProcessorKsFolderPath"/>
+									<scriptParameter isSecure="false" name="dataProcessorKsFolderName"/>
+									<scriptParameter isSecure="false" name="printRegoToolKitLoad"/>
+								</customScript>
+								<Notifications notifyOwner="false">
+									<NotifyWhen stepActionInError="false" stepActionPerformed="false" value="0"/>
+									<Assignees/>
+								</Notifications>
+							</Action>
+						</Operations>
+						<TransitionRestrictions>
+							<TransitionRestriction>
+								<Join type="BPM_JT_NONE">
+									<Condition sequencNo="1" type="BPM_SCT_PRECONDITION"/>
+								</Join>
+							</TransitionRestriction>
+							<TransitionRestriction>
+								<Split type="BPM_ST_SEQUENCE">
+									<Condition sequencNo="1" type="BPM_SCT_POSTCONDITION">
+										<Transitions>
+											<Transition to="Finish"/>
+										</Transitions>
+									</Condition>
+								</Split>
+							</TransitionRestriction>
+						</TransitionRestrictions>
+					</Step>
+					<Step id="Finish" isMileStone="false" sequenceNo="2">
+						<nls languageCode="ca" name="Finish"/>
+						<nls languageCode="cs" name="Finish"/>
+						<nls languageCode="da" name="Finish"/>
+						<nls languageCode="de" name="Finish"/>
+						<nls languageCode="en" name="Finish"/>
+						<nls languageCode="es" name="Finish"/>
+						<nls languageCode="fi" name="Finish"/>
+						<nls languageCode="fr" name="Finish"/>
+						<nls languageCode="hu" name="Finish"/>
+						<nls languageCode="it" name="Finish"/>
+						<nls languageCode="ja" name="Finish"/>
+						<nls languageCode="ko" name="Finish"/>
+						<nls languageCode="nl" name="Finish"/>
+						<nls languageCode="no" name="Finish"/>
+						<nls languageCode="pl" name="Finish"/>
+						<nls languageCode="pt" name="Finish"/>
+						<nls languageCode="ru" name="Finish"/>
+						<nls languageCode="sv" name="Finish"/>
+						<nls languageCode="tr" name="Finish"/>
+						<nls languageCode="zh" name="Finish"/>
+						<nls languageCode="zh_TW" name="Finish"/>
+						<Notifications notifyOwner="false">
+							<NotifyWhen stepCompleted="false" stepInError="false" stepStarted="false"/>
+							<Assignees/>
+						</Notifications>
+						<Operations/>
+						<TransitionRestrictions>
+							<TransitionRestriction>
+								<Join type="BPM_JT_NONE">
+									<Condition sequencNo="1" type="BPM_SCT_PRECONDITION"/>
+								</Join>
+							</TransitionRestriction>
+							<TransitionRestriction>
+								<Split type="BPM_ST_SEQUENCE">
+									<Condition sequencNo="1" type="BPM_SCT_POSTCONDITION">
+										<Transitions/>
+									</Condition>
+								</Split>
+							</TransitionRestriction>
+						</TransitionRestrictions>
+					</Step>
+				</Steps>
+			</Process>
+			<Process allowOneRunningInstance="true" code="rego_conn_manager_masking" createdBy="admin" endStep="Finish" source="customer" startEvent="update" startOption="AUTO_START" startStep="Start">
+				<nls languageCode="ca" name="Connection Manager Masking"/>
+				<nls languageCode="cs" name="Connection Manager Masking"/>
+				<nls languageCode="da" name="Connection Manager Masking"/>
+				<nls languageCode="de" name="Connection Manager Masking"/>
+				<nls languageCode="en" name="Connection Manager Masking"/>
+				<nls languageCode="es" name="Connection Manager Masking"/>
+				<nls languageCode="fi" name="Connection Manager Masking"/>
+				<nls languageCode="fr" name="Connection Manager Masking"/>
+				<nls languageCode="hu" name="Connection Manager Masking"/>
+				<nls languageCode="it" name="Connection Manager Masking"/>
+				<nls languageCode="ja" name="Connection Manager Masking"/>
+				<nls languageCode="ko" name="Connection Manager Masking"/>
+				<nls languageCode="nl" name="Connection Manager Masking"/>
+				<nls languageCode="no" name="Connection Manager Masking"/>
+				<nls languageCode="pl" name="Connection Manager Masking"/>
+				<nls languageCode="pt" name="Connection Manager Masking"/>
+				<nls languageCode="ru" name="Connection Manager Masking"/>
+				<nls languageCode="sv" name="Connection Manager Masking"/>
+				<nls languageCode="tr" name="Connection Manager Masking"/>
+				<nls languageCode="zh" name="Connection Manager Masking"/>
+				<nls languageCode="zh_TW" name="Connection Manager Masking"/>
+				<StartCondition><![CDATA[1==1]]></StartCondition>
+				<Objects>
+					<Object manualStart="true" name="thisConnection Manager" objectType="rego_conn_manager" partitionCode="NIKU.ROOT" partitionModeCode="PARTITION_ONLY" type="BPM_POT_PRIMARY"/>
+				</Objects>
+				<Steps>
+					<Step id="Start" isMileStone="false" sequenceNo="1">
+						<nls languageCode="ca" name="Start"/>
+						<nls languageCode="cs" name="Start"/>
+						<nls languageCode="da" name="Start"/>
+						<nls languageCode="de" name="Start"/>
+						<nls languageCode="en" name="Start"/>
+						<nls languageCode="es" name="Start"/>
+						<nls languageCode="fi" name="Start"/>
+						<nls languageCode="fr" name="Start"/>
+						<nls languageCode="hu" name="Start"/>
+						<nls languageCode="it" name="Start"/>
+						<nls languageCode="ja" name="Start"/>
+						<nls languageCode="ko" name="Start"/>
+						<nls languageCode="nl" name="Start"/>
+						<nls languageCode="no" name="Start"/>
+						<nls languageCode="pl" name="Start"/>
+						<nls languageCode="pt" name="Start"/>
+						<nls languageCode="ru" name="Start"/>
+						<nls languageCode="sv" name="Start"/>
+						<nls languageCode="tr" name="Start"/>
+						<nls languageCode="zh" name="Start"/>
+						<nls languageCode="zh_TW" name="Start"/>
+						<Notifications notifyOwner="false">
+							<NotifyWhen stepCompleted="false" stepInError="false" stepStarted="false"/>
+							<Assignees/>
+						</Notifications>
+						<Operations>
+							<Action code="script" synchronized="true" type="BPM_SAT_CUSTOM">
+								<nls languageCode="ca" name="Script"/>
+								<nls languageCode="cs" name="Script"/>
+								<nls languageCode="da" name="Script"/>
+								<nls languageCode="de" name="Script"/>
+								<nls languageCode="en" name="Script"/>
+								<nls languageCode="es" name="Script"/>
+								<nls languageCode="fi" name="Script"/>
+								<nls languageCode="fr" name="Script"/>
+								<nls languageCode="hu" name="Script"/>
+								<nls languageCode="it" name="Script"/>
+								<nls languageCode="ja" name="Script"/>
+								<nls languageCode="ko" name="Script"/>
+								<nls languageCode="nl" name="Script"/>
+								<nls languageCode="no" name="Script"/>
+								<nls languageCode="pl" name="Script"/>
+								<nls languageCode="pt" name="Script"/>
+								<nls languageCode="ru" name="Script"/>
+								<nls languageCode="sv" name="Script"/>
+								<nls languageCode="tr" name="Script"/>
+								<nls languageCode="zh" name="Script"/>
+								<nls languageCode="zh_TW" name="Script"/>
+								<customScript languageCode="gel">
+									<scriptText>
+										<gel:script xmlns:core="jelly:core" xmlns:gel="jelly:com.niku.union.gel.GELTagLibrary" xmlns:sql="jelly:sql" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+											<!-- PROCESS VARIABLES -->
+											<core:set value="***************" var="passwordMask"/>
+											<!-- ESTABLISH ERROR CATCH -->
+											<core:catch var="errorCatch">
+												<!-- GET CLARITY DATABASE CONNECTION -->
+												<gel:setDataSource dbId="niku" var="clarityDB"/>
+												<!-- GET DB VENDOR -->
+												<core:invokeStatic className="com.niku.union.config.ConfigurationManager" method="getInstance" var="configManager"/>
+												<core:set value="${configManager.getProperties().getDatabaseServer().getVendor().toString()}" var="dbVendor"/>
+												<gel:log level="INFO" var="debugMessage">Database Vendor: ${dbVendor}</gel:log>
+												<!-- GET A STRING ENCRYPTER INSTANCE -->
+												<core:invokeStatic className="com.niku.union.security.StringEncrypter" method="getDefaultInstance" var="encrypter"/>
+												<!-- GET CONNECTION DETAILS PROCESS PARAMETERS -->
+												<sql:query dataSource="${clarityDB}" escapeText="0" var="connectionQuery"><![CDATA[
+      SELECT CM.ID, CM.CODE, CM.NAME, CM.REGO_CONN_TYPE
+      , CM.REGO_PASSWORD, CM.REGO_PASSWORD_E
+      , CM.REGO_TOKEN, CM.REGO_TOKEN_E
+      , CM.REGO_OAUTH_REFRESH, CM.REGO_OAUTH_REFRESH_E
+      , CM.REGO_CLIENT_SECRET, CM.REGO_CLIENT_SECRET_E
+      , CM.REGO_PRIVATE_KEY, CM.REGO_PRIVATE_KEY_E
+      , CM.REGO_SSH_KEY, CM.REGO_SSH_KEY_E
+      FROM ODF_CA_REGO_CONN_MANAGER CM
+      WHERE CM.ID = ?
+      ]]><sql:param value="${gel_objectInstanceId}"/>
+												</sql:query>
+												<!-- ITERATE THROUGH RESULT SET -->
+												<core:forEach items="${connectionQuery.rows}" trim="true" var="connectionRS">
+													<!-- PASSWORD FIELDS -->
+													<core:set value="${connectionRS.REGO_PASSWORD}" var="regoPassword"/>
+													<core:set value="${connectionRS.REGO_PASSWORD_E}" var="regoPasswordE"/>
+													<core:if test="${regoPassword != null and !regoPassword.equalsIgnoreCase(passwordMask)}">
+														<core:invoke method="encrypt" on="${encrypter}" var="regoPasswordE">
+															<core:arg type="java.lang.String" value="${regoPassword}"/>
+														</core:invoke>
+														<core:set value="${passwordMask}" var="regoPassword"/>
+													</core:if>
+													<!-- TOKEN FIELDS (Large String) -->
+													<core:choose>
+														<core:when test="${!empty(connectionRS.REGO_TOKEN)}">
+															<core:choose>
+																<core:when test="${dbVendor.equals('oracle')}">
+																	<core:invoke method="getSubString" on="${connectionRS.REGO_TOKEN}" var="regoToken">
+																		<core:arg type="long" value="1"/>
+																		<core:arg type="int" value="${connectionRS.REGO_TOKEN.length()}"/>
+																	</core:invoke>
+																</core:when>
+																<core:otherwise>
+																	<core:set value="${connectionRS.REGO_TOKEN}" var="regoToken"/>
+																</core:otherwise>
+															</core:choose>
+														</core:when>
+														<core:otherwise>
+															<core:set value="" var="regoToken"/>
+														</core:otherwise>
+													</core:choose>
+													<core:choose>
+														<core:when test="${!empty(connectionRS.REGO_TOKEN_E)}">
+															<core:choose>
+																<core:when test="${dbVendor.equals('oracle')}">
+																	<core:invoke method="getSubString" on="${connectionRS.REGO_TOKEN_E}" var="regoTokenE">
+																		<core:arg type="long" value="1"/>
+																		<core:arg type="int" value="${connectionRS.REGO_TOKEN_E.length()}"/>
+																	</core:invoke>
+																</core:when>
+																<core:otherwise>
+																	<core:set value="${connectionRS.REGO_TOKEN_E}" var="regoTokenE"/>
+																</core:otherwise>
+															</core:choose>
+														</core:when>
+														<core:otherwise>
+															<core:set value="" var="regoTokenE"/>
+														</core:otherwise>
+													</core:choose>
+													<core:if test="${regoToken != null and !regoToken.equalsIgnoreCase(passwordMask)}">
+														<core:invoke method="encrypt" on="${encrypter}" var="regoTokenE">
+															<core:arg type="java.lang.String" value="${regoToken}"/>
+														</core:invoke>
+														<core:set value="${passwordMask}" var="regoToken"/>
+													</core:if>
+													<!-- REFRESH TOKEN FIELDS (Large String) -->
+													<core:choose>
+														<core:when test="${!empty(connectionRS.REGO_OAUTH_REFRESH)}">
+															<core:choose>
+																<core:when test="${dbVendor.equals('oracle')}">
+																	<core:invoke method="getSubString" on="${connectionRS.REGO_OAUTH_REFRESH}" var="regoRefeshToken">
+																		<core:arg type="long" value="1"/>
+																		<core:arg type="int" value="${connectionRS.REGO_OAUTH_REFRESH.length()}"/>
+																	</core:invoke>
+																</core:when>
+																<core:otherwise>
+																	<core:set value="${connectionRS.REGO_OAUTH_REFRESH}" var="regoRefeshToken"/>
+																</core:otherwise>
+															</core:choose>
+														</core:when>
+														<core:otherwise>
+															<core:set value="" var="regoRefeshToken"/>
+														</core:otherwise>
+													</core:choose>
+													<core:choose>
+														<core:when test="${!empty(connectionRS.REGO_OAUTH_REFRESH_E)}">
+															<core:choose>
+																<core:when test="${dbVendor.equals('oracle')}">
+																	<core:invoke method="getSubString" on="${connectionRS.REGO_OAUTH_REFRESH_E}" var="regoRefreshTokenE">
+																		<core:arg type="long" value="1"/>
+																		<core:arg type="int" value="${connectionRS.REGO_OAUTH_REFRESH_E.length()}"/>
+																	</core:invoke>
+																</core:when>
+																<core:otherwise>
+																	<core:set value="${connectionRS.REGO_OAUTH_REFRESH_E}" var="regoRefreshTokenE"/>
+																</core:otherwise>
+															</core:choose>
+														</core:when>
+														<core:otherwise>
+															<core:set value="" var="regoRefreshTokenE"/>
+														</core:otherwise>
+													</core:choose>
+													<core:if test="${regoRefeshToken != null and !regoRefeshToken.equalsIgnoreCase(passwordMask)}">
+														<core:invoke method="encrypt" on="${encrypter}" var="regoRefreshTokenE">
+															<core:arg type="java.lang.String" value="${regoRefeshToken}"/>
+														</core:invoke>
+														<core:set value="${passwordMask}" var="regoRefeshToken"/>
+													</core:if>
+													<!-- CLIENT SECRET TOKEN FIELDS -->
+													<core:set value="${connectionRS.REGO_CLIENT_SECRET}" var="regoClientSecret"/>
+													<core:set value="${connectionRS.REGO_CLIENT_SECRET_E}" var="regoClientSecretE"/>
+													<core:if test="${regoClientSecret != null and !regoClientSecret.equalsIgnoreCase(passwordMask)}">
+														<core:invoke method="encrypt" on="${encrypter}" var="regoClientSecretE">
+															<core:arg type="java.lang.String" value="${regoClientSecret}"/>
+														</core:invoke>
+														<core:set value="${passwordMask}" var="regoClientSecret"/>
+													</core:if>
+													<!-- PRIVATE KEY FIELDS (Large String) -->
+													<core:choose>
+														<core:when test="${!empty(connectionRS.REGO_PRIVATE_KEY)}">
+															<core:choose>
+																<core:when test="${dbVendor.equals('oracle')}">
+																	<core:invoke method="getSubString" on="${connectionRS.REGO_PRIVATE_KEY}" var="regoPrivateKey">
+																		<core:arg type="long" value="1"/>
+																		<core:arg type="int" value="${connectionRS.REGO_PRIVATE_KEY.length()}"/>
+																	</core:invoke>
+																</core:when>
+																<core:otherwise>
+																	<core:set value="${connectionRS.REGO_PRIVATE_KEY}" var="regoPrivateKey"/>
+																</core:otherwise>
+															</core:choose>
+														</core:when>
+														<core:otherwise>
+															<core:set value="" var="regoPrivateKey"/>
+														</core:otherwise>
+													</core:choose>
+													<core:choose>
+														<core:when test="${!empty(connectionRS.REGO_PRIVATE_KEY_E)}">
+															<core:choose>
+																<core:when test="${dbVendor.equals('oracle')}">
+																	<core:invoke method="getSubString" on="${connectionRS.REGO_PRIVATE_KEY_E}" var="regoPrivateKeyE">
+																		<core:arg type="long" value="1"/>
+																		<core:arg type="int" value="${connectionRS.REGO_PRIVATE_KEY_E.length()}"/>
+																	</core:invoke>
+																</core:when>
+																<core:otherwise>
+																	<core:set value="${connectionRS.REGO_PRIVATE_KEY_E}" var="regoPrivateKeyE"/>
+																</core:otherwise>
+															</core:choose>
+														</core:when>
+														<core:otherwise>
+															<core:set value="" var="regoPrivateKeyE"/>
+														</core:otherwise>
+													</core:choose>
+													<core:if test="${regoPrivateKey != null and !regoPrivateKey.equalsIgnoreCase(passwordMask)}">
+														<core:invoke method="encrypt" on="${encrypter}" var="regoPrivateKeyE">
+															<core:arg type="java.lang.String" value="${regoPrivateKey}"/>
+														</core:invoke>
+														<core:set value="${passwordMask}" var="regoPrivateKey"/>
+													</core:if>
+													<!-- SSH KEY FIELDS (Large String) -->
+													<core:choose>
+														<core:when test="${!empty(connectionRS.REGO_SSH_KEY)}">
+															<core:choose>
+																<core:when test="${dbVendor.equals('oracle')}">
+																	<core:invoke method="getSubString" on="${connectionRS.REGO_SSH_KEY}" var="regoSshKey">
+																		<core:arg type="long" value="1"/>
+																		<core:arg type="int" value="${connectionRS.REGO_SSH_KEY.length()}"/>
+																	</core:invoke>
+																</core:when>
+																<core:otherwise>
+																	<core:set value="${connectionRS.REGO_SSH_KEY}" var="regoSshKey"/>
+																</core:otherwise>
+															</core:choose>
+														</core:when>
+														<core:otherwise>
+															<core:set value="" var="regoSshKey"/>
+														</core:otherwise>
+													</core:choose>
+													<core:choose>
+														<core:when test="${!empty(connectionRS.REGO_SSH_KEY_E)}">
+															<core:choose>
+																<core:when test="${dbVendor.equals('oracle')}">
+																	<core:invoke method="getSubString" on="${connectionRS.REGO_SSH_KEY_E}" var="regoSshKeyE">
+																		<core:arg type="long" value="1"/>
+																		<core:arg type="int" value="${connectionRS.REGO_SSH_KEY_E.length()}"/>
+																	</core:invoke>
+																</core:when>
+																<core:otherwise>
+																	<core:set value="${connectionRS.REGO_SSH_KEY_E}" var="regoSshKeyE"/>
+																</core:otherwise>
+															</core:choose>
+														</core:when>
+														<core:otherwise>
+															<core:set value="" var="regoSshKeyE"/>
+														</core:otherwise>
+													</core:choose>
+													<core:if test="${regoSshKey != null and !regoSshKey.equalsIgnoreCase(passwordMask)}">
+														<core:invoke method="encrypt" on="${encrypter}" var="regoSshKeyE">
+															<core:arg type="java.lang.String" value="${regoSshKey}"/>
+														</core:invoke>
+														<core:set value="${passwordMask}" var="regoSshKey"/>
+													</core:if>
+													<!-- UPDATE CONNECTIONS -->
+													<core:invokeStatic className="java.lang.System" method="currentTimeMillis" var="startTime"/>
+													<sql:update dataSource="${clarityDB}" escapeText="0" var="numRecords"><![CDATA[
+        UPDATE ODF_CA_REGO_CONN_MANAGER SET REGO_PASSWORD = ?, REGO_PASSWORD_E = ?
+        , REGO_TOKEN = ?, REGO_TOKEN_E = ?
+        , REGO_OAUTH_REFRESH = ?, REGO_OAUTH_REFRESH_E = ?
+        , REGO_CLIENT_SECRET = ?, REGO_CLIENT_SECRET_E = ?
+        , REGO_PRIVATE_KEY = ?, REGO_PRIVATE_KEY_E = ?
+        , REGO_SSH_KEY = ?, REGO_SSH_KEY_E = ?
+        WHERE ID = ?
+        ]]><sql:param value="${regoPassword}"/>
+														<sql:param value="${regoPasswordE}"/>
+														<sql:param value="${regoToken}"/>
+														<sql:param value="${regoTokenE}"/>
+														<sql:param value="${regoRefeshToken}"/>
+														<sql:param value="${regoRefreshTokenE}"/>
+														<sql:param value="${regoClientSecret}"/>
+														<sql:param value="${regoClientSecretE}"/>
+														<sql:param value="${regoPrivateKey}"/>
+														<sql:param value="${regoPrivateKeyE}"/>
+														<sql:param value="${regoSshKey}"/>
+														<sql:param value="${regoSshKeyE}"/>
+														<sql:param value="${gel_objectInstanceId}"/>
+													</sql:update>
+													<core:invokeStatic className="java.lang.System" method="currentTimeMillis" var="finishTime"/>
+													<gel:log level="INFO">Updated records: ${numRecords}. Elapsed Time: ${finishTime - startTime}(ms)</gel:log>
+												</core:forEach>
+												<!-- END OF RESULT SET LOOP -->
+											</core:catch>
+											<!-- ERROR CATCH -->
+											<core:if test="${!empty(errorCatch)}">
+												<gel:log level="ERROR">Error: ${errorCatch}</gel:log>
+											</core:if>
+										</gel:script>
+									</scriptText>
+								</customScript>
+								<Notifications notifyOwner="false">
+									<NotifyWhen stepActionInError="false" stepActionPerformed="false" value="0"/>
+									<Assignees/>
+								</Notifications>
+							</Action>
+						</Operations>
+						<TransitionRestrictions>
+							<TransitionRestriction>
+								<Join type="BPM_JT_NONE">
+									<Condition sequencNo="1" type="BPM_SCT_PRECONDITION"/>
+								</Join>
+							</TransitionRestriction>
+							<TransitionRestriction>
+								<Split type="BPM_ST_SEQUENCE">
+									<Condition sequencNo="1" type="BPM_SCT_POSTCONDITION">
+										<Transitions>
+											<Transition to="Finish"/>
+										</Transitions>
+									</Condition>
+								</Split>
+							</TransitionRestriction>
+						</TransitionRestrictions>
+					</Step>
+					<Step id="Finish" isMileStone="false" sequenceNo="2">
+						<nls languageCode="ca" name="Finish"/>
+						<nls languageCode="cs" name="Finish"/>
+						<nls languageCode="da" name="Finish"/>
+						<nls languageCode="de" name="Finish"/>
+						<nls languageCode="en" name="Finish"/>
+						<nls languageCode="es" name="Finish"/>
+						<nls languageCode="fi" name="Finish"/>
+						<nls languageCode="fr" name="Finish"/>
+						<nls languageCode="hu" name="Finish"/>
+						<nls languageCode="it" name="Finish"/>
+						<nls languageCode="ja" name="Finish"/>
+						<nls languageCode="ko" name="Finish"/>
+						<nls languageCode="nl" name="Finish"/>
+						<nls languageCode="no" name="Finish"/>
+						<nls languageCode="pl" name="Finish"/>
+						<nls languageCode="pt" name="Finish"/>
+						<nls languageCode="ru" name="Finish"/>
+						<nls languageCode="sv" name="Finish"/>
+						<nls languageCode="tr" name="Finish"/>
+						<nls languageCode="zh" name="Finish"/>
+						<nls languageCode="zh_TW" name="Finish"/>
+						<Notifications notifyOwner="false">
+							<NotifyWhen stepCompleted="false" stepInError="false" stepStarted="false"/>
+							<Assignees/>
+						</Notifications>
+						<Operations/>
+						<TransitionRestrictions>
+							<TransitionRestriction>
+								<Join type="BPM_JT_NONE">
+									<Condition sequencNo="1" type="BPM_SCT_PRECONDITION"/>
+								</Join>
+							</TransitionRestriction>
+							<TransitionRestriction>
+								<Split type="BPM_ST_SEQUENCE">
+									<Condition sequencNo="1" type="BPM_SCT_POSTCONDITION">
+										<Transitions/>
+									</Condition>
+								</Split>
+							</TransitionRestriction>
+						</TransitionRestrictions>
+					</Step>
+				</Steps>
+			</Process>
+		</Processes>
+	</contentPack>
+</NikuDataBus>

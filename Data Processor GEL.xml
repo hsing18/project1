@@ -1,0 +1,431 @@
+<gel:script
+  xmlns:core="jelly:core"
+  xmlns:sql="jelly:sql"
+  xmlns:gel="jelly:com.niku.union.gel.GELTagLibrary"
+  xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xmlns:util="jelly:util"
+>
+
+  <!-- PROCESS PARAMETERS -->
+  <gel:parameter var="dataProcessorJarFilePath" default="RegoTools.jar"/>
+  <gel:parameter var="dataProcessorPgpJarFilePath" default="rego-pgp-0.1.3.jar"/>
+  <gel:parameter var="dataProcessorJschJarFilePath" default="jsch-0.1.55.jar"/>
+  <gel:parameter var="dataProcessorKsFolderPath" default="/Root/DMS/KS"/> <!-- THE PATH WHERE THE FILES ARE STORED IN THE KNOWLEDGE STORE -->
+  <gel:parameter var="dataProcessorKsFolderName" default="Data Processor"/> <!-- THE FOLDER WHERE THE FILES ARE STORED IN THE KNOWLEDGE STORE -->
+  <gel:parameter var="printRegoToolKitLoad" default="false"/>
+
+  <!-- PROCESS VARIABLES -->
+  <core:set var="dataProcessorClassName" value="com.rego.dataProc.DataProcessor"/>
+  <core:set var="pgpClassName" value="com.regoconsulting.crypto.PGPUtility"/>
+  <core:set var="jschClassName" value="com.jcraft.jsch.JSch"/>
+  <core:set var="urlCL" value="java.net.URLClassLoader"/>
+  <core:set var="dataProcessorFolderID" value="-1"/>
+  <core:set var="fileExistsCount" value="0"/>
+  <core:set var="isError" value="false"/>
+
+
+  <!-- GET START TIME OF PROCESS AND ESTABLISH FOR EACH LOOP FOR EXCEPTION HANDLING -->
+  <core:invokeStatic var="processStartTime" className="java.lang.System" method="currentTimeMillis"/>
+  <core:forEach var="i" begin="0" end="0" step="1">
+
+    <!--*********************************************************************************************************-->
+    <!-- GET A DATABASE CONNECTION -->
+    <!--*********************************************************************************************************-->
+
+    <!-- GET CLARITY DATABASE CONNECTION -->
+    <core:catch var="dbConnCatch">
+      <gel:setDataSource var="clarityDB" dbId="niku"/>
+      <core:set var="previousAutoCommit" value="${context.getConnection().getAutoCommit()}"/>
+      <core:expr value="${context.getConnection().setAutoCommit(true)}"/>
+    </core:catch>
+    <core:if test="${!empty(dbConnCatch)}">
+      <gel:log level="ERROR">DB Connection Error: ${dbConnCatch}</gel:log>
+      <core:set var="isError" value="true"/>
+      <core:break/>
+    </core:if>
+
+
+
+    <!--*********************************************************************************************************-->
+    <!-- LOAD THE REGO TOOL KIT -->
+    <!--*********************************************************************************************************-->
+    <core:catch var="classLoadCatch">
+      <gel:log level="INFO">[---------- LOAD REGO TOOL KIT ----------]</gel:log>
+
+      <!-- GET A CONFIGURATION MANAGER INSTANCE -->
+      <core:invokeStatic var="configManager" className="com.niku.union.config.ConfigurationManager" method="getInstance"/>
+      <core:set var="dbVendor" value="${configManager.getProperties().getDatabase(0).getVendor().toString()}"/>
+      <core:set var="docsInDB" value="${configManager.getProperties().getSearchServer().getStoreFilesInDatabase()}"/>
+      <core:if test="${printRegoToolKitLoad}">
+        <core:invokeStatic var="host" className="java.net.InetAddress" method="getLocalHost"/>
+        <gel:log level="INFO">Host: ${host.getLocalHost()}. DB Vendor: ${dbVendor}. Docs In DB: ${docsInDB}</gel:log>
+      </core:if>
+
+      <!-- DETERMINE IF CLASS IS ALREADY LOADED -->
+      <core:catch var="classLoadedCatch">
+        <core:invokeStatic var="dpClass" className="java.lang.Class" method="forName">
+          <core:arg type="java.lang.String" value="${dataProcessorClassName}"/>
+        </core:invokeStatic>
+        <core:new var="dataProcessor" className="${dataProcessorClassName}"/>
+        <gel:log level="INFO">Data Processor Already Loaded From: ${dpClass.getProtectionDomain().getCodeSource().getLocation().toString()}</gel:log>
+      </core:catch>
+
+
+      <!-- LOAD CLASS IF NEEDED -->
+      <core:choose>
+        <core:when test="${dpClass != null}">
+          <!-- INITIALIZE THE CLASS LOADED FROM THE CUSTOM LIB DIRECTORY -->
+          <core:invoke on="${dataProcessor}" method="initialize">
+            <core:arg type="com.niku.union.gel.GELContext" value="${context}"/>
+            <core:arg type="long" value="-99"/>
+          </core:invoke>
+        </core:when>
+        <core:otherwise>
+          <core:invokeStatic var="classLoadStartTime" className="java.lang.System" method="currentTimeMillis"/>
+
+          <!-- ENSURE THE DATA PROCESSOR JAR FILE PATH PARAMETER IS COMPLETED -->
+          <core:if test="${empty(dataProcessorJarFilePath)}">
+            <gel:log level="ERROR">A Data Processor Jar File Path is required.</gel:log>
+            <core:set var="isError" value="true"/>
+            <core:break/>
+          </core:if>
+
+          <!-- GET THE FILES FOR ALL THREE JARS -->
+          <core:new var="dataProcessorJarFile" className="java.io.File">
+            <core:arg type="java.lang.String" value="${dataProcessorJarFilePath}"/>
+          </core:new>
+          <core:new var="dataProcessorPgpJarFile" className="java.io.File">
+            <core:arg type="java.lang.String" value="${dataProcessorPgpJarFilePath}"/>
+          </core:new>
+          <core:new var="dataProcessorJschJarFile" className="java.io.File">
+            <core:arg type="java.lang.String" value="${dataProcessorJschJarFilePath}"/>
+          </core:new>
+
+
+          <!-- GET FILE VERSION IDs FOR THE REGO JDK, QUERY FILE, AND REGO PGP FILE -->
+          <sql:query var="ksFileQuery" dataSource="${clarityDB}" escapeText="0">
+            <![CDATA[
+            SELECT COALESCE(FLD.ID, -1) DP_FOLDER_ID
+            , MAX(CASE WHEN F.NAME = ? THEN FV.ID END) DP_FILE_VERSION_ID
+            , MAX(CASE WHEN F.NAME = ? THEN FV.ID END) PGP_FILE_VERSION_ID
+            , MAX(CASE WHEN F.NAME = ? THEN FV.ID END) JSCH_FILE_VERSION_ID
+            FROM DUAL
+            LEFT JOIN CLB_DMS_FOLDERS FLD ON FLD.PATH_NAME = ? AND FLD.NAME = ? AND FLD.FOLDER_TYPE = 'StandardFolder' AND FLD.ASSOC_OBJ_TYPE = 'NAME'
+            LEFT JOIN CLB_DMS_FILES F ON FLD.ID = F.PARENT_FOLDER_ID AND F.NAME IN (?, ?, ?)
+            LEFT JOIN CLB_DMS_VERSIONS FV ON F.ID = FV.FILE_ID AND FV.IS_LATEST = 1
+            WHERE 1=1
+            GROUP BY FLD.ID
+            ]]>
+
+            <sql:param value="${dataProcessorJarFile.getName()}"/>
+            <sql:param value="${dataProcessorPgpJarFile.getName()}"/>
+            <sql:param value="${dataProcessorJschJarFile.getName()}"/>
+            <sql:param value="${dataProcessorKsFolderPath}"/>
+            <sql:param value="${dataProcessorKsFolderName}"/>
+            <sql:param value="${dataProcessorJarFile.getName()}"/>
+            <sql:param value="${dataProcessorPgpJarFile.getName()}"/>
+            <sql:param value="${dataProcessorJschJarFile.getName()}"/>
+          </sql:query>
+
+          <!-- SET THE FOLDER AND FILE VARIABLES -->
+          <core:set var="dataProcessorFolderID" value="${ksFileQuery.rows[0].DP_FOLDER_ID}"/>
+          <core:set var="dataProcessorJarFileVersionID" value="${ksFileQuery.rows[0].DP_FILE_VERSION_ID}"/>
+          <core:set var="dataProcessorPgpJarFileVersionID" value="${ksFileQuery.rows[0].PGP_FILE_VERSION_ID}"/>
+          <core:set var="dataProcessorJschJarFileVersionID" value="${ksFileQuery.rows[0].JSCH_FILE_VERSION_ID}"/>
+
+
+          <!--*********************************************************************************************************-->
+          <!-- LOCATE THE DATA PROCESSOR JAR FILE -->
+          <!--*********************************************************************************************************-->
+          <core:choose>
+            <!-- DATA PROCESSOR JAR FILE FOUND AT THE FILE PATH -->
+            <core:when test="${dataProcessorJarFile.exists() and !dataProcessorJarFile.isDirectory()}">
+              <core:if test="${printRegoToolKitLoad}">
+                <gel:log level="INFO">Data Processor Jar File found at file path: ${dataProcessorJarFile.getCanonicalFile()}.</gel:log>
+              </core:if>
+            </core:when>
+            <!-- DATA PROCESSOR PATH EXISTS BUT ITS A DIRECTORY -->
+            <core:when test="${dataProcessorJarFile.exists() and dataProcessorJarFile.isDirectory()}">
+              <gel:log level="ERROR">The Data Processor Jar File Path must be a file, not a directory: ${dataProcessorJarFile.getCanonicalFile()}</gel:log>
+              <core:set var="isError" value="true"/>
+              <core:break/>
+            </core:when>
+            <!-- DATA PROCESSOR PATH DOES NOT EXIST -->
+            <core:when test="${!dataProcessorJarFile.exists() and !empty(dataProcessorJarFile.getParentFile())}">
+              <gel:log level="ERROR">The Data Processor Jar File does not exist at the path: ${dataProcessorJarFile.getCanonicalFile()}</gel:log>
+              <core:set var="isError" value="true"/>
+              <core:break/>
+            </core:when>
+            <!-- USE DATA PROCESSOR JAR FILE FROM KNOWLEDGE STORE -->
+            <core:when test="${!dataProcessorJarFile.exists() and empty(dataProcessorJarFile.getParentFile()) and !docsInDB}">
+              <core:if test="${empty(dataProcessorJarFileVersionID)}">
+                <gel:log level="ERROR">The Data Processor Jar File Version ID was not found in the Knowledge Store. File Name: ${dataProcessorJarFile.getName()}. Folder Path: ${dataProcessorKsFolderPath}. Folder Name: ${dataProcessorKsFolderName}. File Version ID: ${dataProcessorJarFileVersionID}</gel:log>
+                <core:set var="isError" value="true"/>
+                <core:break/>
+              </core:if>
+              <!-- GET THE DATA PROCESSOR JAR FROM THE FILE STORE -->
+              <core:invokeStatic var="dataProcessorJarFileString" className="com.niku.dms.util.FileUtil" method="getCompleteFilePath">
+                <core:arg type="long" value="${dataProcessorJarFileVersionID.longValue()}"/>
+              </core:invokeStatic>
+              <core:new var="dataProcessorJarFile" className="java.io.File">
+                <core:arg type="java.lang.String" value="${dataProcessorJarFileString}"/>
+              </core:new>
+              <core:if test="${!dataProcessorJarFile.exists()}">
+                <gel:log level="ERROR">The Data Processor Jar File was not found in the file store at : ${dataProcessorJarFileString}.</gel:log>
+                <core:set var="isError" value="true"/>
+                <core:break/>
+              </core:if>
+              <core:if test="${printRegoToolKitLoad}">
+                <gel:log level="INFO">Data Processor Jar File was found in the file store at: ${dataProcessorJarFileString}.</gel:log>
+              </core:if>
+            </core:when>
+            <!-- DATA PROCESSOR FILE DOES NOT EXIST, DOES NOT PROVIDE A FULL PATH, AND FILES ARE STORED IN THE DATABASE -->
+            <core:when test="${!dataProcessorJarFile.exists() and empty(dataProcessorJarFile.getParentFile()) and docsInDB}">
+              <gel:log level="ERROR">The Data Processor Jar File Path must exist at the file path when documents are stored in the database: ${dataProcessorJarFile.getCanonicalFile()}</gel:log>
+              <core:set var="isError" value="true"/>
+              <core:break/>
+            </core:when>
+            <core:otherwise>
+              <gel:log level="ERROR">Unable to locate the Data Processor Jar File.</gel:log>
+              <core:set var="isError" value="true"/>
+              <core:break/>
+            </core:otherwise>
+          </core:choose> <!-- END OF DATA PROCESSOR JAR FILE LOCATION -->
+
+
+          <!--*********************************************************************************************************-->
+          <!-- LOCATE THE PGP JAR FILE -->
+          <!--*********************************************************************************************************-->
+          <core:choose>
+            <!-- PGP JAR FILE FOUND AT THE FILE PATH -->
+            <core:when test="${dataProcessorPgpJarFile.exists() and !dataProcessorPgpJarFile.isDirectory()}">
+              <core:if test="${printRegoToolKitLoad}">
+                <gel:log level="INFO">PGP Jar File found at file path: ${dataProcessorPgpJarFile.getCanonicalFile()}.</gel:log>
+              </core:if>
+            </core:when>
+            <!-- PGP JAR PATH EXISTS BUT ITS A DIRECTORY -->
+            <core:when test="${dataProcessorPgpJarFile.exists() and dataProcessorPgpJarFile.isDirectory()}">
+              <gel:log level="ERROR">The PGP Jar File Path must be a file, not a directory: ${dataProcessorPgpJarFile.getCanonicalFile()}</gel:log>
+              <core:set var="isError" value="true"/>
+              <core:break/>
+            </core:when>
+            <!-- PGP JAR PATH DOES NOT EXIST -->
+            <core:when test="${!dataProcessorPgpJarFile.exists() and !empty(dataProcessorPgpJarFile.getParentFile())}">
+              <gel:log level="ERROR">The PGP Jar File does not exist at the path: ${dataProcessorPgpJarFile.getCanonicalFile()}</gel:log>
+              <core:set var="isError" value="true"/>
+              <core:break/>
+            </core:when>
+            <!-- USE PGP JAR FILE FROM KNOWLEDGE STORE -->
+            <core:when test="${!dataProcessorPgpJarFile.exists() and empty(dataProcessorPgpJarFile.getParentFile()) and !docsInDB and !empty(dataProcessorPgpJarFileVersionID)}">
+              <core:if test="${empty(dataProcessorPgpJarFileVersionID)}">
+                <gel:log level="ERROR">The PGP Jar File Version ID was not found in the Knowledge Store. File Name: ${dataProcessorPgpJarFile.getName()}. Folder Path: ${dataProcessorKsFolderPath}. Folder Name: ${dataProcessorKsFolderName}. File Version ID: ${dataProcessorPgpJarFileVersionID}</gel:log>
+                <core:set var="isError" value="true"/>
+                <core:break/>
+              </core:if>
+              <!-- GET THE PGP JAR FILE FROM THE FILE STORE -->
+              <core:invokeStatic var="dataProcessorPgpJarFileString" className="com.niku.dms.util.FileUtil" method="getCompleteFilePath">
+                <core:arg type="long" value="${dataProcessorPgpJarFileVersionID.longValue()}"/>
+              </core:invokeStatic>
+              <core:new var="dataProcessorPgpJarFile" className="java.io.File">
+                <core:arg type="java.lang.String" value="${dataProcessorPgpJarFileString}"/>
+              </core:new>
+              <core:if test="${!dataProcessorPgpJarFile.exists()}">
+                <gel:log level="ERROR">The PGP Jar File was not found in the file store at : ${dataProcessorPgpJarFileString}.</gel:log>
+                <core:set var="isError" value="true"/>
+                <core:break/>
+              </core:if>
+              <core:if test="${printRegoToolKitLoad}">
+                <gel:log level="INFO">PGP Jar File was found in the file store at: ${dataProcessorPgpJarFileString}.</gel:log>
+              </core:if>
+            </core:when>
+            <!-- PGP JAR FILE DOES NOT EXIST, DOES NOT PROVIDE A FULL PATH, AND FILES ARE STORED IN THE DATABASE -->
+            <core:when test="${!dataProcessorPgpJarFile.exists() and empty(dataProcessorPgpJarFile.getParentFile()) and docsInDB and !empty(dataProcessorPgpJarFileVersionID)}">
+              <gel:log level="ERROR">The PGP Jar File Path must exist at the file path when documents are stored in the database: ${dataProcessorPgpJarFile.getCanonicalFile()}</gel:log>
+              <core:set var="isError" value="true"/>
+              <core:break/>
+            </core:when>
+            <core:when test="${printRegoToolKitLoad}">
+              <gel:log level="INFO">The PGP Jar File was not loaded.</gel:log>
+            </core:when>
+          </core:choose> <!-- END OF PGP JAR FILE LOCATION -->
+
+
+          <!--*********************************************************************************************************-->
+          <!-- LOCATE THE JSCH JAR FILE -->
+          <!--*********************************************************************************************************-->
+          <core:choose>
+            <!-- JSCH JAR FILE FOUND AT THE FILE PATH -->
+            <core:when test="${dataProcessorJschJarFile.exists() and !dataProcessorJschJarFile.isDirectory()}">
+              <core:if test="${printRegoToolKitLoad}">
+                <gel:log level="INFO">JSch Jar File found at file path: ${dataProcessorJschJarFile.getCanonicalFile()}.</gel:log>
+              </core:if>
+            </core:when>
+            <!-- JSCH JAR PATH EXISTS BUT ITS A DIRECTORY -->
+            <core:when test="${dataProcessorJschJarFile.exists() and dataProcessorJschJarFile.isDirectory()}">
+              <gel:log level="ERROR">The JSch Jar File Path must be a file, not a directory: ${dataProcessorJschJarFile.getCanonicalFile()}</gel:log>
+              <core:set var="isError" value="true"/>
+              <core:break/>
+            </core:when>
+            <!-- JSCH JAR PATH DOES NOT EXIST -->
+            <core:when test="${!dataProcessorJschJarFile.exists() and !empty(dataProcessorJschJarFile.getParentFile())}">
+              <gel:log level="ERROR">The JSch Jar File does not exist at the path: ${dataProcessorJschJarFile.getCanonicalFile()}</gel:log>
+              <core:set var="isError" value="true"/>
+              <core:break/>
+            </core:when>
+            <!-- USE JSCH JAR FILE FROM KNOWLEDGE STORE -->
+            <core:when test="${!dataProcessorJschJarFile.exists() and empty(dataProcessorJschJarFile.getParentFile()) and !docsInDB and !empty(dataProcessorJschJarFileVersionID)}">
+              <core:if test="${empty(dataProcessorJschJarFileVersionID)}">
+                <gel:log level="ERROR">The JSch Jar File Version ID was not found in the Knowledge Store. File Name: ${dataProcessorJschJarFile.getName()}. Folder Path: ${dataProcessorKsFolderPath}. Folder Name: ${dataProcessorKsFolderName}. File Version ID: ${dataProcessorJschJarFileVersionID}</gel:log>
+                <core:set var="isError" value="true"/>
+                <core:break/>
+              </core:if>
+              <!-- GET THE JSCH JAR FILE FROM THE FILE STORE -->
+              <core:invokeStatic var="dataProcessorJschJarFileString" className="com.niku.dms.util.FileUtil" method="getCompleteFilePath">
+                <core:arg type="long" value="${dataProcessorJschJarFileVersionID.longValue()}"/>
+              </core:invokeStatic>
+              <core:new var="dataProcessorJschJarFile" className="java.io.File">
+                <core:arg type="java.lang.String" value="${dataProcessorJschJarFileString}"/>
+              </core:new>
+              <core:if test="${!dataProcessorJschJarFile.exists()}">
+                <gel:log level="ERROR">The JSch Jar File was not found in the file store at : ${dataProcessorJschJarFileString}.</gel:log>
+                <core:set var="isError" value="true"/>
+                <core:break/>
+              </core:if>
+              <core:if test="${printRegoToolKitLoad}">
+                <gel:log level="INFO">JSch Jar File was found in the file store at: ${dataProcessorJschJarFileString}.</gel:log>
+              </core:if>
+            </core:when>
+            <!-- JSCH JAR FILE DOES NOT EXIST, DOES NOT PROVIDE A FULL PATH, AND FILES ARE STORED IN THE DATABASE -->
+            <core:when test="${!dataProcessorJschJarFile.exists() and empty(dataProcessorJschJarFile.getParentFile()) and docsInDB and !empty(dataProcessorJschJarFileVersionID)}">
+              <gel:log level="ERROR">The JSch Jar File Path must exist at the file path when documents are stored in the database: ${dataProcessorJschJarFile.getCanonicalFile()}</gel:log>
+              <core:set var="isError" value="true"/>
+              <core:break/>
+            </core:when>
+            <core:when test="${printRegoToolKitLoad}">
+              <gel:log level="INFO">The JSch Jar File was not loaded.</gel:log>
+            </core:when>
+          </core:choose> <!-- END OF JSch JAR FILE LOCATION -->
+
+
+          <!--*********************************************************************************************************-->
+          <!-- SIDE LOAD THE DATA PROCESSOR JAR FILE -->
+          <!--*********************************************************************************************************-->
+          <core:new var="classList" className="java.util.ArrayList"/>
+          <core:invoke on="${classList}" method="add">
+            <core:arg type="java.net.URL" value="${dataProcessorJarFile.toURI().toURL()}"/>
+          </core:invoke>
+          <core:invokeStatic var="classType" className="java.lang.Class" method="forName">
+            <core:arg type="java.lang.String" value="java.net.URL"/>
+          </core:invokeStatic>
+          <core:invokeStatic var="classArray" className="java.lang.reflect.Array" method="newInstance">
+            <core:arg type="java.lang.Class" value="${classType}"/>
+            <core:arg type="int" value="${1}"/>
+          </core:invokeStatic>
+          <core:invoke var="urlsArray" on="${classList}" method="toArray">
+            <core:arg value="${classArray}"/>
+          </core:invoke>
+          <core:new var="classLoader" className="${urlCL}">
+            <core:arg value="${urlsArray}"/>
+            <core:arg value="${context.getClassLoader()}"/>
+          </core:new>
+          <core:invokeStatic var="dataProcessorClass" className="java.lang.Class" method="forName">
+            <core:arg type="java.lang.String" value="${dataProcessorClassName}"/>
+            <core:arg type="boolean" value="${true}"/>
+            <core:arg type="java.lang.ClassLoader" value="${classLoader}"/>
+          </core:invokeStatic>
+          <core:if test="${printRegoToolKitLoad}">
+            <gel:log level="INFO">Data Processor Class Loaded.</gel:log>
+          </core:if>
+
+          <!-- INSTANTIATE AND INITIALIZE THE CLASS -->
+          <core:invoke var="dataProcessor" on="${dataProcessorClass}" method="newInstance"/>
+          <core:if test="${dataProcessor == null}">
+            <gel:log level="ERROR">Data Processor instance is null.</gel:log>
+            <core:break/>
+          </core:if>
+          <core:invoke on="${dataProcessor}" method="initialize">
+            <core:arg type="com.niku.union.gel.GELContext" value="${context}"/>
+            <core:arg type="java.io.File" value="${dataProcessorPgpJarFile}"/>
+            <core:arg type="java.io.File" value="${dataProcessorJschJarFile}"/>
+            <core:arg type="long" value="${dataProcessorFolderID.longValue()}"/>
+          </core:invoke>
+
+          <!-- LOG CLASS LOADER RESULTS -->
+          <core:invokeStatic var="classLoadFinishTime" className="java.lang.System" method="currentTimeMillis"/>
+          <gel:log level="INFO">Data Processor Loaded. Version: ${dataProcessor.getVersion()}. Elapsed Time: ${classLoadFinishTime - classLoadStartTime}(ms).</gel:log>
+          <core:expr value="${context.getConnection().commit()}"/>
+        </core:otherwise>
+      </core:choose> <!-- END OF CLASS LOAD CONDITION -->
+    </core:catch> <!-- END OF CLASS LOAD CATCH -->
+
+    <!-- BREAK PROCESS IF THERE WAS AN ERROR -->
+    <core:if test="${!empty(classLoadCatch)}">
+      <gel:log level="ERROR">Class Load Error: ${classLoadCatch}</gel:log>
+      <core:expr value="${context.getConnection().commit()}"/>
+      <core:if test="${!empty(dataProcessor)}">
+        <core:invoke var="stackTrace" on="${dataProcessor}" method="exceptionToString">
+          <core:arg value="${classLoadCatch}"/>
+        </core:invoke>
+        <gel:log level="ERROR">${stackTrace}</gel:log>
+        <core:expr value="${context.getConnection().commit()}"/>
+      </core:if>
+      <core:break/>
+    </core:if>
+
+
+
+    <!--*********************************************************************************************************-->
+    <!-- INVOKE DATA PROCESSOR -->
+    <!--*********************************************************************************************************-->
+
+    <!-- CAPTURE THE XML DOCUMENT IF THE PROCESS WAS INVOKED THROUGH XOG -->
+    <core:set var="xmlDoc" value="${null}"/>
+    <core:catch var="xmlDocCatch">
+      <gel:getDocument var="xmlDoc"/>
+    </core:catch>
+
+    <!-- ENSURE THE DATA PROCESSOR INSTANCE IS NOT NULL -->
+    <core:if test="${dataProcessor == null}">
+      <gel:log level="ERROR">The Data Processor instance is null</gel:log>
+      <core:break/>
+    </core:if>
+
+    <!-- EXECUTE THE PROCESSES -->
+    <core:catch var="executeCatch">
+      <core:invoke on="${dataProcessor}" method="executeProcesses">
+        <core:arg type="org.w3c.dom.Document" value="${xmlDoc}"/>
+      </core:invoke>
+    </core:catch>
+
+    <!-- DATA LOAD ERRORS -->
+    <core:if test="${!empty(executeCatch)}">
+      <gel:log level="ERROR">Execution Error: ${executeCatch}</gel:log>
+      <core:invoke var="stackTrace" on="${dataProcessor}" method="exceptionToString">
+        <core:arg value="${executeCatch}"/>
+      </core:invoke>
+      <gel:log level="ERROR">Stack Trace: ${stackTrace}</gel:log>
+      <core:expr value="${context.getConnection().commit()}"/>
+      <core:set var="isError" value="true"/>
+    </core:if>
+
+
+
+  <!--*********************************************************************************************************-->
+  <!-- FINAL PROCESS RESULTS -->
+  <!--*********************************************************************************************************-->
+  </core:forEach> <!-- END OF EXCEPTION FOR LOOP -->
+  <core:expr value="${context.getConnection().setAutoCommit(previousAutoCommit)}"/>
+  <gel:log level="INFO">[---------- DATA PROCESSOR COMPLETE ----------]</gel:log>
+
+  <!-- CLOSE DATA PROCESSOR CONNECTIONS -->
+  <core:if test="${dataProcessor != null}">
+    <core:invoke on="${dataProcessor}" method="close"/>
+  </core:if>
+
+
+  <!-- GET ELAPSED RUN TIME OF THE PROCESS -->
+  <core:invokeStatic var="processFinishTime" className="java.lang.System" method="currentTimeMillis"/>
+  <gel:log level="INFO">Server Processing. Total Elapsed Time: ${processFinishTime - processStartTime}(ms).</gel:log>
+
+</gel:script>

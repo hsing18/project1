@@ -1,0 +1,378 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<NikuDataBus xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../xsd/nikuxog_contentPack.xsd">
+	<Header action="write" externalSource="NIKU" objectType="contentPack" version="15.0"/>
+	<contentPack update="true">
+		<jobDefinitions update="true">
+			<jobDefinition active="1" executable="com.niku.bpm.jobs.ExecuteProcessJob" isHidden="false" jobDefinitionCode="rego_data_processor" jobType="JAVA" logEnabled="1" outputEnabled="1" runConcurrent="false" source="customer">
+				<nls description="Data Processor" languageCode="ca" name="Data Processor"/>
+				<nls description="Data Processor" languageCode="cs" name="Data Processor"/>
+				<nls description="Data Processor" languageCode="da" name="Data Processor"/>
+				<nls description="Data Processor" languageCode="de" name="Data Processor"/>
+				<nls description="Data Processor" languageCode="en" name="Data Processor"/>
+				<nls description="Data Processor" languageCode="es" name="Data Processor"/>
+				<nls description="Data Processor" languageCode="fi" name="Data Processor"/>
+				<nls description="Data Processor" languageCode="fr" name="Data Processor"/>
+				<nls description="Data Processor" languageCode="hu" name="Data Processor"/>
+				<nls description="Data Processor" languageCode="it" name="Data Processor"/>
+				<nls description="Data Processor" languageCode="ja" name="Data Processor"/>
+				<nls description="Data Processor" languageCode="ko" name="Data Processor"/>
+				<nls description="Data Processor" languageCode="nl" name="Data Processor"/>
+				<nls description="Data Processor" languageCode="no" name="Data Processor"/>
+				<nls description="Data Processor" languageCode="pl" name="Data Processor"/>
+				<nls description="Data Processor" languageCode="pt" name="Data Processor"/>
+				<nls description="Data Processor" languageCode="ru" name="Data Processor"/>
+				<nls description="Data Processor" languageCode="sv" name="Data Processor"/>
+				<nls description="Data Processor" languageCode="tr" name="Data Processor"/>
+				<nls description="Data Processor" languageCode="zh" name="Data Processor"/>
+				<nls description="Data Processor" languageCode="zh_TW" name="Data Processor"/>
+				<parameter code="param_data_process" dataType="string" lookupCardinality="1" lookupCode="REGO_DATA_PROCESSES" order="1" readOnly="false" required="false" widgetType="browse">
+					<nls languageCode="ca" name="Data Process"/>
+					<nls languageCode="cs" name="Data Process"/>
+					<nls languageCode="da" name="Data Process"/>
+					<nls languageCode="de" name="Data Process"/>
+					<nls description="Data Process" languageCode="en" name="Data Process"/>
+					<nls languageCode="es" name="Data Process"/>
+					<nls languageCode="fi" name="Data Process"/>
+					<nls languageCode="fr" name="Data Process"/>
+					<nls languageCode="hu" name="Data Process"/>
+					<nls languageCode="it" name="Data Process"/>
+					<nls languageCode="ja" name="Data Process"/>
+					<nls languageCode="ko" name="Data Process"/>
+					<nls languageCode="nl" name="Data Process"/>
+					<nls languageCode="no" name="Data Process"/>
+					<nls languageCode="pl" name="Data Process"/>
+					<nls languageCode="pt" name="Data Process"/>
+					<nls languageCode="ru" name="Data Process"/>
+					<nls languageCode="sv" name="Data Process"/>
+					<nls languageCode="tr" name="Data Process"/>
+					<nls languageCode="zh" name="Data Process"/>
+					<nls languageCode="zh_TW" name="Data Process"/>
+				</parameter>
+				<parameter code="param_processing_group" dataType="string" lookupCardinality="1" lookupCode="REGO_PROCESSING_GRP" order="2" readOnly="false" required="false" widgetType="select">
+					<nls languageCode="ca" name="Processing Group"/>
+					<nls languageCode="cs" name="Processing Group"/>
+					<nls languageCode="da" name="Processing Group"/>
+					<nls languageCode="de" name="Processing Group"/>
+					<nls description="Processing Group" languageCode="en" name="Processing Group"/>
+					<nls languageCode="es" name="Processing Group"/>
+					<nls languageCode="fi" name="Processing Group"/>
+					<nls languageCode="fr" name="Processing Group"/>
+					<nls languageCode="hu" name="Processing Group"/>
+					<nls languageCode="it" name="Processing Group"/>
+					<nls languageCode="ja" name="Processing Group"/>
+					<nls languageCode="ko" name="Processing Group"/>
+					<nls languageCode="nl" name="Processing Group"/>
+					<nls languageCode="no" name="Processing Group"/>
+					<nls languageCode="pl" name="Processing Group"/>
+					<nls languageCode="pt" name="Processing Group"/>
+					<nls languageCode="ru" name="Processing Group"/>
+					<nls languageCode="sv" name="Processing Group"/>
+					<nls languageCode="tr" name="Processing Group"/>
+					<nls languageCode="zh" name="Processing Group"/>
+					<nls languageCode="zh_TW" name="Processing Group"/>
+				</parameter>
+				<parameter code="param_process_code" dataType="string" defaultValue="rego_data_processor" lookupCardinality="1" lookupCode="BROWSE_NON_OBJECT_PROCESSES" order="3" readOnly="true" required="true" widgetType="browse">
+					<nls languageCode="ca" name="Process"/>
+					<nls languageCode="cs" name="Process"/>
+					<nls languageCode="da" name="Process"/>
+					<nls languageCode="de" name="Process"/>
+					<nls description="Process" languageCode="en" name="Process"/>
+					<nls languageCode="es" name="Process"/>
+					<nls languageCode="fi" name="Process"/>
+					<nls languageCode="fr" name="Process"/>
+					<nls languageCode="hu" name="Process"/>
+					<nls languageCode="it" name="Process"/>
+					<nls languageCode="ja" name="Process"/>
+					<nls languageCode="ko" name="Process"/>
+					<nls languageCode="nl" name="Process"/>
+					<nls languageCode="no" name="Process"/>
+					<nls languageCode="pl" name="Process"/>
+					<nls languageCode="pt" name="Process"/>
+					<nls languageCode="ru" name="Process"/>
+					<nls languageCode="sv" name="Process"/>
+					<nls languageCode="tr" name="Process"/>
+					<nls languageCode="zh" name="Process"/>
+					<nls languageCode="zh_TW" name="Process"/>
+				</parameter>
+				<parameter code="param_run_single_instance" dataType="boolean" defaultValue="0" order="4" readOnly="true" required="true" widgetType="checkbox">
+					<nls languageCode="ca" name="[hidden]: Allow only one running instance"/>
+					<nls languageCode="cs" name="[hidden]: Allow only one running instance"/>
+					<nls languageCode="da" name="[hidden]: Allow only one running instance"/>
+					<nls languageCode="de" name="[hidden]: Allow only one running instance"/>
+					<nls languageCode="en" name="[hidden]: Allow only one running instance"/>
+					<nls languageCode="es" name="[hidden]: Allow only one running instance"/>
+					<nls languageCode="fi" name="[hidden]: Allow only one running instance"/>
+					<nls languageCode="fr" name="[hidden]: Allow only one running instance"/>
+					<nls languageCode="hu" name="[hidden]: Allow only one running instance"/>
+					<nls languageCode="it" name="[hidden]: Allow only one running instance"/>
+					<nls languageCode="ja" name="[hidden]: Allow only one running instance"/>
+					<nls languageCode="ko" name="[hidden]: Allow only one running instance"/>
+					<nls languageCode="nl" name="[hidden]: Allow only one running instance"/>
+					<nls languageCode="no" name="[hidden]: Allow only one running instance"/>
+					<nls languageCode="pl" name="[hidden]: Allow only one running instance"/>
+					<nls languageCode="pt" name="[hidden]: Allow only one running instance"/>
+					<nls languageCode="ru" name="[hidden]: Allow only one running instance"/>
+					<nls languageCode="sv" name="[hidden]: Allow only one running instance"/>
+					<nls languageCode="tr" name="[hidden]: Allow only one running instance"/>
+					<nls languageCode="zh" name="[hidden]: Allow only one running instance"/>
+					<nls languageCode="zh_TW" name="[hidden]: Allow only one running instance"/>
+				</parameter>
+			</jobDefinition>
+		</jobDefinitions>
+		<lookups update="true">
+			<dynamicLookup autoSuggestEnabled="true" autoSuggestMaxSuggestions="10" code="REGO_DATA_PROCESSES" displayAttributeName="name" hiddenAttributeName="code" objectCode="rego_data_processor" sortAttributeName="sort_order" sortDirection="asc" source="niku.com" status="active" update="true">
+				<nls description="" languageCode="ca" name="Data Processes"/>
+				<nls description="" languageCode="cs" name="Data Processes"/>
+				<nls description="" languageCode="da" name="Data Processes"/>
+				<nls description="" languageCode="de" name="Data Processes"/>
+				<nls description="" languageCode="en" name="Data Processes"/>
+				<nls description="" languageCode="es" name="Data Processes"/>
+				<nls description="" languageCode="fi" name="Data Processes"/>
+				<nls description="" languageCode="fr" name="Data Processes"/>
+				<nls description="" languageCode="hu" name="Data Processes"/>
+				<nls description="" languageCode="it" name="Data Processes"/>
+				<nls description="" languageCode="ja" name="Data Processes"/>
+				<nls description="" languageCode="ko" name="Data Processes"/>
+				<nls description="" languageCode="nl" name="Data Processes"/>
+				<nls description="" languageCode="no" name="Data Processes"/>
+				<nls description="" languageCode="pl" name="Data Processes"/>
+				<nls description="" languageCode="pt" name="Data Processes"/>
+				<nls description="" languageCode="ru" name="Data Processes"/>
+				<nls description="" languageCode="sv" name="Data Processes"/>
+				<nls description="" languageCode="tr" name="Data Processes"/>
+				<nls description="" languageCode="zh" name="Data Processes"/>
+				<nls description="" languageCode="zh_TW" name="Data Processes"/>
+				<nsql databaseId="Niku" dbVendor="all"><![CDATA[SELECT @SELECT:DP.ID:ID@
+, @SELECT:DP.CODE:CODE@
+, @SELECT:DP.NAME:NAME@
+, @SELECT:DP.REGO_SORT_ORDER:SORT_ORDER@
+
+FROM ODF_CA_REGO_DATA_PROCESSOR DP
+
+WHERE 1=1
+AND @FILTER@]]></nsql>
+				<displayedSuggestionAttributes>
+					<displayedSuggestionAttribute value="name"/>
+				</displayedSuggestionAttributes>
+				<searchedSuggestionAttributes>
+					<searchedSuggestionAttribute value="name"/>
+				</searchedSuggestionAttributes>
+				<browsePage>
+					<singleSelectPageTitles>
+						<nls description="REGO_DATA_PROCESSES_01" languageCode="ca" name="REGO_DATA_PROCESSES_01"/>
+						<nls description="REGO_DATA_PROCESSES_01" languageCode="cs" name="REGO_DATA_PROCESSES_01"/>
+						<nls description="REGO_DATA_PROCESSES_01" languageCode="da" name="REGO_DATA_PROCESSES_01"/>
+						<nls description="REGO_DATA_PROCESSES_01" languageCode="de" name="REGO_DATA_PROCESSES_01"/>
+						<nls description="Data Processes" languageCode="en" name="Data Processes"/>
+						<nls description="REGO_DATA_PROCESSES_01" languageCode="es" name="REGO_DATA_PROCESSES_01"/>
+						<nls description="REGO_DATA_PROCESSES_01" languageCode="fi" name="REGO_DATA_PROCESSES_01"/>
+						<nls description="REGO_DATA_PROCESSES_01" languageCode="fr" name="REGO_DATA_PROCESSES_01"/>
+						<nls description="REGO_DATA_PROCESSES_01" languageCode="hu" name="REGO_DATA_PROCESSES_01"/>
+						<nls description="REGO_DATA_PROCESSES_01" languageCode="it" name="REGO_DATA_PROCESSES_01"/>
+						<nls description="REGO_DATA_PROCESSES_01" languageCode="ja" name="REGO_DATA_PROCESSES_01"/>
+						<nls description="REGO_DATA_PROCESSES_01" languageCode="ko" name="REGO_DATA_PROCESSES_01"/>
+						<nls description="REGO_DATA_PROCESSES_01" languageCode="nl" name="REGO_DATA_PROCESSES_01"/>
+						<nls description="REGO_DATA_PROCESSES_01" languageCode="no" name="REGO_DATA_PROCESSES_01"/>
+						<nls description="REGO_DATA_PROCESSES_01" languageCode="pl" name="REGO_DATA_PROCESSES_01"/>
+						<nls description="REGO_DATA_PROCESSES_01" languageCode="pt" name="REGO_DATA_PROCESSES_01"/>
+						<nls description="REGO_DATA_PROCESSES_01" languageCode="ru" name="REGO_DATA_PROCESSES_01"/>
+						<nls description="REGO_DATA_PROCESSES_01" languageCode="sv" name="REGO_DATA_PROCESSES_01"/>
+						<nls description="REGO_DATA_PROCESSES_01" languageCode="tr" name="REGO_DATA_PROCESSES_01"/>
+						<nls description="REGO_DATA_PROCESSES_01" languageCode="zh" name="REGO_DATA_PROCESSES_01"/>
+						<nls description="REGO_DATA_PROCESSES_01" languageCode="zh_TW" name="REGO_DATA_PROCESSES_01"/>
+					</singleSelectPageTitles>
+					<multiSelectPageTitles>
+						<nls description="REGO_DATA_PROCESSES_01" languageCode="ca" name="REGO_DATA_PROCESSES_01"/>
+						<nls description="REGO_DATA_PROCESSES_01" languageCode="cs" name="REGO_DATA_PROCESSES_01"/>
+						<nls description="REGO_DATA_PROCESSES_01" languageCode="da" name="REGO_DATA_PROCESSES_01"/>
+						<nls description="REGO_DATA_PROCESSES_01" languageCode="de" name="REGO_DATA_PROCESSES_01"/>
+						<nls description="Data Processes" languageCode="en" name="Data Processes"/>
+						<nls description="REGO_DATA_PROCESSES_01" languageCode="es" name="REGO_DATA_PROCESSES_01"/>
+						<nls description="REGO_DATA_PROCESSES_01" languageCode="fi" name="REGO_DATA_PROCESSES_01"/>
+						<nls description="REGO_DATA_PROCESSES_01" languageCode="fr" name="REGO_DATA_PROCESSES_01"/>
+						<nls description="REGO_DATA_PROCESSES_01" languageCode="hu" name="REGO_DATA_PROCESSES_01"/>
+						<nls description="REGO_DATA_PROCESSES_01" languageCode="it" name="REGO_DATA_PROCESSES_01"/>
+						<nls description="REGO_DATA_PROCESSES_01" languageCode="ja" name="REGO_DATA_PROCESSES_01"/>
+						<nls description="REGO_DATA_PROCESSES_01" languageCode="ko" name="REGO_DATA_PROCESSES_01"/>
+						<nls description="REGO_DATA_PROCESSES_01" languageCode="nl" name="REGO_DATA_PROCESSES_01"/>
+						<nls description="REGO_DATA_PROCESSES_01" languageCode="no" name="REGO_DATA_PROCESSES_01"/>
+						<nls description="REGO_DATA_PROCESSES_01" languageCode="pl" name="REGO_DATA_PROCESSES_01"/>
+						<nls description="REGO_DATA_PROCESSES_01" languageCode="pt" name="REGO_DATA_PROCESSES_01"/>
+						<nls description="REGO_DATA_PROCESSES_01" languageCode="ru" name="REGO_DATA_PROCESSES_01"/>
+						<nls description="REGO_DATA_PROCESSES_01" languageCode="sv" name="REGO_DATA_PROCESSES_01"/>
+						<nls description="REGO_DATA_PROCESSES_01" languageCode="tr" name="REGO_DATA_PROCESSES_01"/>
+						<nls description="REGO_DATA_PROCESSES_01" languageCode="zh" name="REGO_DATA_PROCESSES_01"/>
+						<nls description="REGO_DATA_PROCESSES_01" languageCode="zh_TW" name="REGO_DATA_PROCESSES_01"/>
+					</multiSelectPageTitles>
+					<filter code="code" defaultValue="" order="2" widgetType="text">
+						<nls description="" languageCode="ca" name="code"/>
+						<nls description="" languageCode="cs" name="code"/>
+						<nls description="" languageCode="da" name="code"/>
+						<nls description="" languageCode="de" name="code"/>
+						<nls description="ID" languageCode="en" name="ID"/>
+						<nls description="" languageCode="es" name="code"/>
+						<nls description="" languageCode="fi" name="code"/>
+						<nls description="" languageCode="fr" name="code"/>
+						<nls description="" languageCode="hu" name="code"/>
+						<nls description="" languageCode="it" name="code"/>
+						<nls description="" languageCode="ja" name="code"/>
+						<nls description="" languageCode="ko" name="code"/>
+						<nls description="" languageCode="nl" name="code"/>
+						<nls description="" languageCode="no" name="code"/>
+						<nls description="" languageCode="pl" name="code"/>
+						<nls description="" languageCode="pt" name="code"/>
+						<nls description="" languageCode="ru" name="code"/>
+						<nls description="" languageCode="sv" name="code"/>
+						<nls description="" languageCode="tr" name="code"/>
+						<nls description="" languageCode="zh" name="code"/>
+						<nls description="" languageCode="zh_TW" name="code"/>
+					</filter>
+					<filter code="name" defaultValue="" order="1" widgetType="text">
+						<nls description="" languageCode="ca" name="name"/>
+						<nls description="" languageCode="cs" name="name"/>
+						<nls description="" languageCode="da" name="name"/>
+						<nls description="" languageCode="de" name="name"/>
+						<nls description="Name" languageCode="en" name="Name"/>
+						<nls description="" languageCode="es" name="name"/>
+						<nls description="" languageCode="fi" name="name"/>
+						<nls description="" languageCode="fr" name="name"/>
+						<nls description="" languageCode="hu" name="name"/>
+						<nls description="" languageCode="it" name="name"/>
+						<nls description="" languageCode="ja" name="name"/>
+						<nls description="" languageCode="ko" name="name"/>
+						<nls description="" languageCode="nl" name="name"/>
+						<nls description="" languageCode="no" name="name"/>
+						<nls description="" languageCode="pl" name="name"/>
+						<nls description="" languageCode="pt" name="name"/>
+						<nls description="" languageCode="ru" name="name"/>
+						<nls description="" languageCode="sv" name="name"/>
+						<nls description="" languageCode="tr" name="name"/>
+						<nls description="" languageCode="zh" name="name"/>
+						<nls description="" languageCode="zh_TW" name="name"/>
+					</filter>
+					<filter code="sort_order" defaultValue="" order="3" widgetType="text">
+						<nls description="" languageCode="ca" name="sort_order"/>
+						<nls description="" languageCode="cs" name="sort_order"/>
+						<nls description="" languageCode="da" name="sort_order"/>
+						<nls description="" languageCode="de" name="sort_order"/>
+						<nls description="Sort Order" languageCode="en" name="Sort Order"/>
+						<nls description="" languageCode="es" name="sort_order"/>
+						<nls description="" languageCode="fi" name="sort_order"/>
+						<nls description="" languageCode="fr" name="sort_order"/>
+						<nls description="" languageCode="hu" name="sort_order"/>
+						<nls description="" languageCode="it" name="sort_order"/>
+						<nls description="" languageCode="ja" name="sort_order"/>
+						<nls description="" languageCode="ko" name="sort_order"/>
+						<nls description="" languageCode="nl" name="sort_order"/>
+						<nls description="" languageCode="no" name="sort_order"/>
+						<nls description="" languageCode="pl" name="sort_order"/>
+						<nls description="" languageCode="pt" name="sort_order"/>
+						<nls description="" languageCode="ru" name="sort_order"/>
+						<nls description="" languageCode="sv" name="sort_order"/>
+						<nls description="" languageCode="tr" name="sort_order"/>
+						<nls description="" languageCode="zh" name="sort_order"/>
+						<nls description="" languageCode="zh_TW" name="sort_order"/>
+					</filter>
+					<listColumn code="code" order="2" widgetType="text">
+						<nls description="" languageCode="ca" name="code"/>
+						<nls description="" languageCode="cs" name="code"/>
+						<nls description="" languageCode="da" name="code"/>
+						<nls description="" languageCode="de" name="code"/>
+						<nls description="ID" languageCode="en" name="ID"/>
+						<nls description="" languageCode="es" name="code"/>
+						<nls description="" languageCode="fi" name="code"/>
+						<nls description="" languageCode="fr" name="code"/>
+						<nls description="" languageCode="hu" name="code"/>
+						<nls description="" languageCode="it" name="code"/>
+						<nls description="" languageCode="ja" name="code"/>
+						<nls description="" languageCode="ko" name="code"/>
+						<nls description="" languageCode="nl" name="code"/>
+						<nls description="" languageCode="no" name="code"/>
+						<nls description="" languageCode="pl" name="code"/>
+						<nls description="" languageCode="pt" name="code"/>
+						<nls description="" languageCode="ru" name="code"/>
+						<nls description="" languageCode="sv" name="code"/>
+						<nls description="" languageCode="tr" name="code"/>
+						<nls description="" languageCode="zh" name="code"/>
+						<nls description="" languageCode="zh_TW" name="code"/>
+					</listColumn>
+					<listColumn code="name" order="1" widgetType="text">
+						<nls description="" languageCode="ca" name="name"/>
+						<nls description="" languageCode="cs" name="name"/>
+						<nls description="" languageCode="da" name="name"/>
+						<nls description="" languageCode="de" name="name"/>
+						<nls description="Name" languageCode="en" name="Name"/>
+						<nls description="" languageCode="es" name="name"/>
+						<nls description="" languageCode="fi" name="name"/>
+						<nls description="" languageCode="fr" name="name"/>
+						<nls description="" languageCode="hu" name="name"/>
+						<nls description="" languageCode="it" name="name"/>
+						<nls description="" languageCode="ja" name="name"/>
+						<nls description="" languageCode="ko" name="name"/>
+						<nls description="" languageCode="nl" name="name"/>
+						<nls description="" languageCode="no" name="name"/>
+						<nls description="" languageCode="pl" name="name"/>
+						<nls description="" languageCode="pt" name="name"/>
+						<nls description="" languageCode="ru" name="name"/>
+						<nls description="" languageCode="sv" name="name"/>
+						<nls description="" languageCode="tr" name="name"/>
+						<nls description="" languageCode="zh" name="name"/>
+						<nls description="" languageCode="zh_TW" name="name"/>
+					</listColumn>
+					<listColumn code="sort_order" order="3" widgetType="text">
+						<nls description="" languageCode="ca" name="sort_order"/>
+						<nls description="" languageCode="cs" name="sort_order"/>
+						<nls description="" languageCode="da" name="sort_order"/>
+						<nls description="" languageCode="de" name="sort_order"/>
+						<nls description="Sort Order" languageCode="en" name="Sort Order"/>
+						<nls description="" languageCode="es" name="sort_order"/>
+						<nls description="" languageCode="fi" name="sort_order"/>
+						<nls description="" languageCode="fr" name="sort_order"/>
+						<nls description="" languageCode="hu" name="sort_order"/>
+						<nls description="" languageCode="it" name="sort_order"/>
+						<nls description="" languageCode="ja" name="sort_order"/>
+						<nls description="" languageCode="ko" name="sort_order"/>
+						<nls description="" languageCode="nl" name="sort_order"/>
+						<nls description="" languageCode="no" name="sort_order"/>
+						<nls description="" languageCode="pl" name="sort_order"/>
+						<nls description="" languageCode="pt" name="sort_order"/>
+						<nls description="" languageCode="ru" name="sort_order"/>
+						<nls description="" languageCode="sv" name="sort_order"/>
+						<nls description="" languageCode="tr" name="sort_order"/>
+						<nls description="" languageCode="zh" name="sort_order"/>
+						<nls description="" languageCode="zh_TW" name="sort_order"/>
+					</listColumn>
+				</browsePage>
+			</dynamicLookup>
+			<staticLookup autoSuggestEnabled="true" autoSuggestMaxSuggestions="10" code="REGO_PROCESSING_GRP" hiddenAttributeName="lookup_enum" sortStyle="manual" source="niku.com" status="active" update="true">
+				<nls description="" languageCode="ca" name="Processing Group"/>
+				<nls description="" languageCode="cs" name="Processing Group"/>
+				<nls description="" languageCode="da" name="Processing Group"/>
+				<nls description="" languageCode="de" name="Processing Group"/>
+				<nls description="" languageCode="en" name="Processing Group"/>
+				<nls description="" languageCode="es" name="Processing Group"/>
+				<nls description="" languageCode="fi" name="Processing Group"/>
+				<nls description="" languageCode="fr" name="Processing Group"/>
+				<nls description="" languageCode="hu" name="Processing Group"/>
+				<nls description="" languageCode="it" name="Processing Group"/>
+				<nls description="" languageCode="ja" name="Processing Group"/>
+				<nls description="" languageCode="ko" name="Processing Group"/>
+				<nls description="" languageCode="nl" name="Processing Group"/>
+				<nls description="" languageCode="no" name="Processing Group"/>
+				<nls description="" languageCode="pl" name="Processing Group"/>
+				<nls description="" languageCode="pt" name="Processing Group"/>
+				<nls description="" languageCode="ru" name="Processing Group"/>
+				<nls description="" languageCode="sv" name="Processing Group"/>
+				<nls description="" languageCode="tr" name="Processing Group"/>
+				<nls description="" languageCode="zh" name="Processing Group"/>
+				<nls description="" languageCode="zh_TW" name="Processing Group"/>
+				<displayedSuggestionAttributes>
+					<displayedSuggestionAttribute value="name"/>
+				</displayedSuggestionAttributes>
+				<searchedSuggestionAttributes>
+					<searchedSuggestionAttribute value="name"/>
+				</searchedSuggestionAttributes>
+			</staticLookup>
+		</lookups>
+	</contentPack>
+</NikuDataBus>

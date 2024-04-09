@@ -1,0 +1,283 @@
+<gel:script
+  xmlns:core="jelly:core"
+  xmlns:sql="jelly:sql"
+  xmlns:gel="jelly:com.niku.union.gel.GELTagLibrary"
+  xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+>
+
+  <!-- PROCESS VARIABLES -->
+  <core:set var="passwordMask" value="***************"/>
+
+  <!-- ESTABLISH ERROR CATCH -->
+  <core:catch var="errorCatch">
+
+    <!-- GET CLARITY DATABASE CONNECTION -->
+    <gel:setDataSource var="clarityDB" dbId="niku"/>
+
+    <!-- GET DB VENDOR -->
+    <core:invokeStatic var="configManager" className="com.niku.union.config.ConfigurationManager" method="getInstance"/>
+    <core:set var="dbVendor" value="${configManager.getProperties().getDatabaseServer().getVendor().toString()}"/>
+    <gel:log level="INFO" var="debugMessage">Database Vendor: ${dbVendor}</gel:log>
+
+
+    <!-- GET A STRING ENCRYPTER INSTANCE -->
+    <core:invokeStatic var="encrypter" className="com.niku.union.security.StringEncrypter" method="getDefaultInstance"/>
+
+    <!-- GET CONNECTION DETAILS PROCESS PARAMETERS -->
+    <sql:query var="connectionQuery" dataSource="${clarityDB}" escapeText="0">
+      <![CDATA[
+      SELECT CM.ID, CM.CODE, CM.NAME, CM.REGO_CONN_TYPE
+      , CM.REGO_PASSWORD, CM.REGO_PASSWORD_E
+      , CM.REGO_TOKEN, CM.REGO_TOKEN_E
+      , CM.REGO_OAUTH_REFRESH, CM.REGO_OAUTH_REFRESH_E
+      , CM.REGO_CLIENT_SECRET, CM.REGO_CLIENT_SECRET_E
+      , CM.REGO_PRIVATE_KEY, CM.REGO_PRIVATE_KEY_E
+      , CM.REGO_SSH_KEY, CM.REGO_SSH_KEY_E
+      FROM ODF_CA_REGO_CONN_MANAGER CM
+      WHERE CM.ID = ?
+      ]]>
+
+      <sql:param value="${gel_objectInstanceId}"/>
+    </sql:query>
+
+    <!-- ITERATE THROUGH RESULT SET -->
+    <core:forEach var="connectionRS" items="${connectionQuery.rows}" trim="true">
+
+      <!-- PASSWORD FIELDS -->
+      <core:set var="regoPassword" value="${connectionRS.REGO_PASSWORD}"/>
+      <core:set var="regoPasswordE" value="${connectionRS.REGO_PASSWORD_E}"/>
+      <core:if test="${regoPassword != null and !regoPassword.equalsIgnoreCase(passwordMask)}">
+        <core:invoke var="regoPasswordE" on="${encrypter}" method="encrypt">
+          <core:arg type="java.lang.String" value="${regoPassword}"/>
+        </core:invoke>
+        <core:set var="regoPassword" value="${passwordMask}"/>
+      </core:if>
+
+      <!-- TOKEN FIELDS (Large String) -->
+      <core:choose>
+        <core:when test="${!empty(connectionRS.REGO_TOKEN)}">
+          <core:choose>
+            <core:when test="${dbVendor.equals('oracle')}">
+              <core:invoke var="regoToken" on="${connectionRS.REGO_TOKEN}" method="getSubString">
+                <core:arg type="long" value="1"/>
+                <core:arg type="int" value="${connectionRS.REGO_TOKEN.length()}"/>
+              </core:invoke>
+            </core:when>
+            <core:otherwise>
+              <core:set var="regoToken" value="${connectionRS.REGO_TOKEN}"/>
+            </core:otherwise>
+          </core:choose>
+        </core:when>
+        <core:otherwise>
+          <core:set var="regoToken" value=""/>
+        </core:otherwise>
+      </core:choose>
+      <core:choose>
+        <core:when test="${!empty(connectionRS.REGO_TOKEN_E)}">
+          <core:choose>
+            <core:when test="${dbVendor.equals('oracle')}">
+              <core:invoke var="regoTokenE" on="${connectionRS.REGO_TOKEN_E}" method="getSubString">
+                <core:arg type="long" value="1"/>
+                <core:arg type="int" value="${connectionRS.REGO_TOKEN_E.length()}"/>
+              </core:invoke>
+            </core:when>
+            <core:otherwise>
+              <core:set var="regoTokenE" value="${connectionRS.REGO_TOKEN_E}"/>
+            </core:otherwise>
+          </core:choose>
+        </core:when>
+        <core:otherwise>
+          <core:set var="regoTokenE" value=""/>
+        </core:otherwise>
+      </core:choose>
+      <core:if test="${regoToken != null and !regoToken.equalsIgnoreCase(passwordMask)}">
+        <core:invoke var="regoTokenE" on="${encrypter}" method="encrypt">
+          <core:arg type="java.lang.String" value="${regoToken}"/>
+        </core:invoke>
+        <core:set var="regoToken" value="${passwordMask}"/>
+      </core:if>
+
+      <!-- REFRESH TOKEN FIELDS (Large String) -->
+      <core:choose>
+        <core:when test="${!empty(connectionRS.REGO_OAUTH_REFRESH)}">
+          <core:choose>
+            <core:when test="${dbVendor.equals('oracle')}">
+              <core:invoke var="regoRefeshToken" on="${connectionRS.REGO_OAUTH_REFRESH}" method="getSubString">
+                <core:arg type="long" value="1"/>
+                <core:arg type="int" value="${connectionRS.REGO_OAUTH_REFRESH.length()}"/>
+              </core:invoke>
+            </core:when>
+            <core:otherwise>
+              <core:set var="regoRefeshToken" value="${connectionRS.REGO_OAUTH_REFRESH}"/>
+            </core:otherwise>
+          </core:choose>
+        </core:when>
+        <core:otherwise>
+          <core:set var="regoRefeshToken" value=""/>
+        </core:otherwise>
+      </core:choose>
+      <core:choose>
+        <core:when test="${!empty(connectionRS.REGO_OAUTH_REFRESH_E)}">
+          <core:choose>
+            <core:when test="${dbVendor.equals('oracle')}">
+              <core:invoke var="regoRefreshTokenE" on="${connectionRS.REGO_OAUTH_REFRESH_E}" method="getSubString">
+                <core:arg type="long" value="1"/>
+                <core:arg type="int" value="${connectionRS.REGO_OAUTH_REFRESH_E.length()}"/>
+              </core:invoke>
+            </core:when>
+            <core:otherwise>
+              <core:set var="regoRefreshTokenE" value="${connectionRS.REGO_OAUTH_REFRESH_E}"/>
+            </core:otherwise>
+          </core:choose>
+        </core:when>
+        <core:otherwise>
+          <core:set var="regoRefreshTokenE" value=""/>
+        </core:otherwise>
+      </core:choose>
+      <core:if test="${regoRefeshToken != null and !regoRefeshToken.equalsIgnoreCase(passwordMask)}">
+        <core:invoke var="regoRefreshTokenE" on="${encrypter}" method="encrypt">
+          <core:arg type="java.lang.String" value="${regoRefeshToken}"/>
+        </core:invoke>
+        <core:set var="regoRefeshToken" value="${passwordMask}"/>
+      </core:if>
+
+      <!-- CLIENT SECRET TOKEN FIELDS -->
+      <core:set var="regoClientSecret" value="${connectionRS.REGO_CLIENT_SECRET}"/>
+      <core:set var="regoClientSecretE" value="${connectionRS.REGO_CLIENT_SECRET_E}"/>
+      <core:if test="${regoClientSecret != null and !regoClientSecret.equalsIgnoreCase(passwordMask)}">
+        <core:invoke var="regoClientSecretE" on="${encrypter}" method="encrypt">
+          <core:arg type="java.lang.String" value="${regoClientSecret}"/>
+        </core:invoke>
+        <core:set var="regoClientSecret" value="${passwordMask}"/>
+      </core:if>
+
+      <!-- PRIVATE KEY FIELDS (Large String) -->
+      <core:choose>
+        <core:when test="${!empty(connectionRS.REGO_PRIVATE_KEY)}">
+          <core:choose>
+            <core:when test="${dbVendor.equals('oracle')}">
+              <core:invoke var="regoPrivateKey" on="${connectionRS.REGO_PRIVATE_KEY}" method="getSubString">
+                <core:arg type="long" value="1"/>
+                <core:arg type="int" value="${connectionRS.REGO_PRIVATE_KEY.length()}"/>
+              </core:invoke>
+            </core:when>
+            <core:otherwise>
+              <core:set var="regoPrivateKey" value="${connectionRS.REGO_PRIVATE_KEY}"/>
+            </core:otherwise>
+          </core:choose>
+        </core:when>
+        <core:otherwise>
+          <core:set var="regoPrivateKey" value=""/>
+        </core:otherwise>
+      </core:choose>
+      <core:choose>
+        <core:when test="${!empty(connectionRS.REGO_PRIVATE_KEY_E)}">
+          <core:choose>
+            <core:when test="${dbVendor.equals('oracle')}">
+              <core:invoke var="regoPrivateKeyE" on="${connectionRS.REGO_PRIVATE_KEY_E}" method="getSubString">
+                <core:arg type="long" value="1"/>
+                <core:arg type="int" value="${connectionRS.REGO_PRIVATE_KEY_E.length()}"/>
+              </core:invoke>
+            </core:when>
+            <core:otherwise>
+              <core:set var="regoPrivateKeyE" value="${connectionRS.REGO_PRIVATE_KEY_E}"/>
+            </core:otherwise>
+          </core:choose>
+        </core:when>
+        <core:otherwise>
+          <core:set var="regoPrivateKeyE" value=""/>
+        </core:otherwise>
+      </core:choose>
+      <core:if test="${regoPrivateKey != null and !regoPrivateKey.equalsIgnoreCase(passwordMask)}">
+        <core:invoke var="regoPrivateKeyE" on="${encrypter}" method="encrypt">
+          <core:arg type="java.lang.String" value="${regoPrivateKey}"/>
+        </core:invoke>
+        <core:set var="regoPrivateKey" value="${passwordMask}"/>
+      </core:if>
+
+      <!-- SSH KEY FIELDS (Large String) -->
+      <core:choose>
+        <core:when test="${!empty(connectionRS.REGO_SSH_KEY)}">
+          <core:choose>
+            <core:when test="${dbVendor.equals('oracle')}">
+              <core:invoke var="regoSshKey" on="${connectionRS.REGO_SSH_KEY}" method="getSubString">
+                <core:arg type="long" value="1"/>
+                <core:arg type="int" value="${connectionRS.REGO_SSH_KEY.length()}"/>
+              </core:invoke>
+            </core:when>
+            <core:otherwise>
+              <core:set var="regoSshKey" value="${connectionRS.REGO_SSH_KEY}"/>
+            </core:otherwise>
+          </core:choose>
+        </core:when>
+        <core:otherwise>
+          <core:set var="regoSshKey" value=""/>
+        </core:otherwise>
+      </core:choose>
+      <core:choose>
+        <core:when test="${!empty(connectionRS.REGO_SSH_KEY_E)}">
+          <core:choose>
+            <core:when test="${dbVendor.equals('oracle')}">
+              <core:invoke var="regoSshKeyE" on="${connectionRS.REGO_SSH_KEY_E}" method="getSubString">
+                <core:arg type="long" value="1"/>
+                <core:arg type="int" value="${connectionRS.REGO_SSH_KEY_E.length()}"/>
+              </core:invoke>
+            </core:when>
+            <core:otherwise>
+              <core:set var="regoSshKeyE" value="${connectionRS.REGO_SSH_KEY_E}"/>
+            </core:otherwise>
+          </core:choose>
+        </core:when>
+        <core:otherwise>
+          <core:set var="regoSshKeyE" value=""/>
+        </core:otherwise>
+      </core:choose>
+      <core:if test="${regoSshKey != null and !regoSshKey.equalsIgnoreCase(passwordMask)}">
+        <core:invoke var="regoSshKeyE" on="${encrypter}" method="encrypt">
+          <core:arg type="java.lang.String" value="${regoSshKey}"/>
+        </core:invoke>
+        <core:set var="regoSshKey" value="${passwordMask}"/>
+      </core:if>
+
+
+      <!-- UPDATE CONNECTIONS -->
+      <core:invokeStatic var="startTime" className="java.lang.System" method="currentTimeMillis"/>
+      <sql:update var="numRecords" dataSource="${clarityDB}" escapeText="0">
+        <![CDATA[
+        UPDATE ODF_CA_REGO_CONN_MANAGER SET REGO_PASSWORD = ?, REGO_PASSWORD_E = ?
+        , REGO_TOKEN = ?, REGO_TOKEN_E = ?
+        , REGO_OAUTH_REFRESH = ?, REGO_OAUTH_REFRESH_E = ?
+        , REGO_CLIENT_SECRET = ?, REGO_CLIENT_SECRET_E = ?
+        , REGO_PRIVATE_KEY = ?, REGO_PRIVATE_KEY_E = ?
+        , REGO_SSH_KEY = ?, REGO_SSH_KEY_E = ?
+        WHERE ID = ?
+        ]]>
+
+        <sql:param value="${regoPassword}"/>
+        <sql:param value="${regoPasswordE}"/>
+        <sql:param value="${regoToken}"/>
+        <sql:param value="${regoTokenE}"/>
+        <sql:param value="${regoRefeshToken}"/>
+        <sql:param value="${regoRefreshTokenE}"/>
+        <sql:param value="${regoClientSecret}"/>
+        <sql:param value="${regoClientSecretE}"/>
+        <sql:param value="${regoPrivateKey}"/>
+        <sql:param value="${regoPrivateKeyE}"/>
+        <sql:param value="${regoSshKey}"/>
+        <sql:param value="${regoSshKeyE}"/>
+        <sql:param value="${gel_objectInstanceId}"/>
+      </sql:update>
+      <core:invokeStatic var="finishTime" className="java.lang.System" method="currentTimeMillis"/>
+      <gel:log level="INFO">Updated records: ${numRecords}. Elapsed Time: ${finishTime - startTime}(ms)</gel:log>
+
+    </core:forEach> <!-- END OF RESULT SET LOOP -->
+  </core:catch>
+
+
+  <!-- ERROR CATCH -->
+  <core:if test="${!empty(errorCatch)}">
+    <gel:log level="ERROR">Error: ${errorCatch}</gel:log>
+  </core:if>
+
+</gel:script>
